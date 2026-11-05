@@ -1,0 +1,12 @@
+# ai-module 依赖说明
+# - test_extractor.py / demo.py：仅 Python 标准库，无第三方依赖
+# - llm_server.py：本机 HF 缓存离线推理（Qwen1.5-0.5B-Chat，CPU）
+#   torch 建议复用本机已有安装（本机为 2.12.0+cpu）；transformers 5.8.1 对下列两个包有版本要求：
+transformers>=5.8
+tokenizers>=0.22.0,<=0.23.0
+huggingface_hub>=1.0
+fastapi
+uvicorn
+# 后续检索（BM25 主路径）将增加：
+# jieba
+# rank_bm25

@@ -11,3 +11,4 @@ work/
 /data/
 .env.*
 !.env.example
+ai-module/outputs/
