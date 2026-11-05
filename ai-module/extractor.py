@@ -289,7 +289,7 @@ def merge_with_rule(llm_fields: dict, text: str) -> tuple[dict, list]:
                 patched.append(f)
             elif leaked:
                 # 泄漏且规则也无法提供 → 置空。宁可缺失（走补件流程），
-                # 不可让示例哨兵值或幻觉值冒充真实数据流到下游。
+                # 避免示例哨兵值或幻觉值被误作为真实数据传递至下游。
                 merged.pop(f)
     return merged, patched
 

@@ -177,7 +177,7 @@ def test_merge_with_rule_patches_leaked_fields():
 
 
 def test_merge_with_rule_nulls_unpatchable_leak():
-    """泄漏且规则也补不上（如餐补单没有发票）→ 字段必须清空，哨兵值不得残留。"""
+    """泄漏且规则亦无法补齐（如餐补单没有发票）→ 字段必须清空，哨兵值不得残留。"""
     slip4 = """报销单
 提交人：赵敏
 部门：财务部

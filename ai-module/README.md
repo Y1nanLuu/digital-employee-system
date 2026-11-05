@@ -29,15 +29,15 @@ python demo.py             # 真实模型调用 + 字段仲裁 + 降级演示
 
 | 层级 | 触发条件 | 行为 | 留痕 |
 |---|---|---|---|
-| L1 解析容错 | 模型输出格式野（围栏/数组包裹/带货币符） | 解析时自动纠正，字段保留 | 无（视为正常） |
-| L2 字段级仲裁 | 个别字段泄漏/缺失 | 规则结果补齐；补不上则清空（宁缺勿错） | `patched_fields` |
+| L1 解析容错 | 模型输出格式不规范（代码围栏/数组包裹/金额带货币符号） | 解析时自动纠正，字段保留 | 无（视为正常） |
+| L2 字段级仲裁 | 个别字段泄漏/缺失 | 规则结果补齐；无法补齐则清空（宁缺勿错） | `patched_fields` |
 | L3 整体降级（**备用方案**） | LLM 服务不可达/超时/输出整体非法 | 全部字段走规则提取，系统能力不中断 | `fallback_event` |
 
 **两种使用方式**：
 - **计划内走规则**（如无环境演示）：`model_config.json` 置 `"enabled": false`；
-- **计划走 LLM 但服务挂了**：保持 `enabled: true`，自动触发 L3 降级（已实测：停掉 llm_server 后 demo 仍 5/5 完成提取，每单留 `llm_timeout_or_unreachable` 事件）。
+- **计划走 LLM 但服务不可用**：保持 `enabled: true`，自动触发 L3 降级（已实测：停止 llm_server 后 demo 仍 5/5 完成提取，每单留 `llm_timeout_or_unreachable` 事件）。
 
-换团队 API 沙盒：改 `base_url + api_key + model` 三处，`extractor.py` 零改动；L2/L3 防线对任何模型保留不撤。
+换团队 API 沙盒：改 `base_url + api_key + model` 三处，`extractor.py` 零改动；L2/L3 防线对任何模型始终保留。
 
 ## 目录
 
