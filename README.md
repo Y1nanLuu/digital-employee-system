@@ -116,9 +116,13 @@ Windows PowerShell：
 .\.venv\Scripts\python.exe -m pytest -c backend/pytest.ini backend/tests -q
 # 真实HTTP链路与进程重启测试，使用临时数据，不影响演示任务
 .\.venv\Scripts\python.exe scripts/smoke.py
+# 对已启动的标准端口服务执行演示步骤与接口约定校验（需先启动8000与8001）
+.\.venv\Scripts\python.exe scripts/verify_system.py
 cd frontend
 npm.cmd run build
 ```
+
+`scripts/smoke.py`自行启动并停止临时服务与临时库，适合提交前门禁；`scripts/verify_system.py`校验标准端口上真实运行的整套服务，含六个演示步骤、校验、权限、幂等、指标与工具鉴权共36项断言。
 
 集成测试使用独立临时SQLite数据库，以及连接两个FastAPI应用的HTTP模拟传输，验证接口契约和状态流转，不覆盖个人开发数据。Docker镜像构建与PostgreSQL联调需在Docker可运行环境另行验证。
 
@@ -146,8 +150,8 @@ backend/finance/main.py      独立模拟财务API
 backend/tests/              流程、权限、边界、异常及幂等测试
 frontend/src/App.vue        员工端概览、报销提交、任务追踪及审批/指标兼容页面
 frontend/src/api.ts         前端接口类型和请求适配
-scripts/                   依赖安装及前台启动脚本
-docs/                      接口约定、架构、分工和后续任务
+scripts/                   依赖安装、前台启动脚本及集成验证脚本
+docs/                      接口约定(API.md)、架构与责任(ARCHITECTURE.md)、数据设计(DATA-DESIGN.md)、启动与部署约定(DEPLOYMENT.md)及成员材料
 ai-module/                 AI与知识检索模块：字段提取（LLM+规则双轨）、制度库16条、检索方案（见ai-module/README.md）
 compose.yaml               PostgreSQL及三服务编排
 ```

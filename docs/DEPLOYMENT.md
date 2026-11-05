@@ -1,0 +1,111 @@
+# 启动约定与部署
+
+本文件是团队的统一启动约定：进程与端口、环境变量、数据位置、验证命令与常见问题。命令以 Windows PowerShell 与项目根目录为基准，其他平台把路径分隔符换成对应形式。
+
+## 一、技术栈基线
+
+| 层 | 选型 | 实测版本 | 说明 |
+|---|---|---|---|
+| 前端 | Vue 3 + TypeScript + Vite | Node 26.8.1、npm 11.19.0 | 要求 Node ≥ 22.12；`vue-tsc` 参与构建，类型错误直接构建失败 |
+| 业务后端 | FastAPI + SQLAlchemy 2 + Pydantic 2 | Python 3.14.7 | 推荐 3.11 及以上；`Decimal` 处理金额，不用浮点 |
+| 模拟财务服务 | FastAPI + SQLAlchemy | 同上 | 独立进程、独立库、独立工具密钥 |
+| 数据库 | SQLite（本地）/ PostgreSQL 17（Compose） | psycopg 3.3.8 | 本地不要求安装数据库或 Docker |
+| 测试 | pytest + 真实 HTTP 冒烟脚本 | pytest 9.2.0 | 使用临时库，不影响演示数据 |
+
+## 二、进程与端口
+
+| 进程 | 本地端口 | Compose 端口 | 启动命令 |
+|---|---|---|---|
+| 模拟财务 API | 8001 | 8001 | `scripts/dev.ps1 finance` |
+| 业务后端 | 8000 | 8000 | `scripts/dev.ps1 backend` |
+| 前端开发服务器 | 5173（代理 `/api` 到 8000） | — | `scripts/dev.ps1 frontend` |
+| 前端静态站点（nginx） | — | 8080 | `docker compose up --build -d` |
+| PostgreSQL | — | db:5432（仅容器网络） | 随 Compose 启动 |
+
+所有服务只绑定 `127.0.0.1`。浏览器入口：本地 `http://localhost:5173`，Compose `http://localhost:8080`；接口文档 `http://127.0.0.1:8000/docs`、`http://127.0.0.1:8001/docs`。
+
+## 三、环境变量
+
+| 变量 | 默认值 | 作用域 | 说明 |
+|---|---|---|---|
+| `DATABASE_URL` | `sqlite:///./data/tasks.db` | 业务后端 | 业务库连接串，PostgreSQL 用 `postgresql+psycopg://` |
+| `FINANCE_DATABASE_URL` | `sqlite:///./data/finance.db` | 模拟财务 | 仅本地或测试覆盖使用 |
+| `FINANCE_URL` | `http://127.0.0.1:8001` | 业务后端 | 后端调用财务服务的地址 |
+| `FINANCE_KEY` | `local-finance-key` | 后端与财务 | 工具密钥，只允许后端持有，前端不接触 |
+| `DEMO_PASSWORD` | `demo123` | 业务后端 | 三个演示账号的统一密码 |
+| `POSTGRES_PASSWORD` | `local-postgres-password` | Compose | 仅 Compose 使用 |
+
+约定：
+
+- `.env.example` 是模板，复制为 `.env` 后生效；`.env` 不入库。
+- `scripts/dev.ps1` 只读取 `DEMO_PASSWORD`、`FINANCE_KEY`、`POSTGRES_PASSWORD` 三项；`DATABASE_URL`、`FINANCE_DATABASE_URL`、`FINANCE_URL` 通过当前终端环境变量覆盖。
+- 直接运行 uvicorn 不会自动读取 `.env`，需要先在终端设置环境变量。
+- 任何密钥、真实账号凭据不得写入代码、文档和日志。
+
+演示账号：`employee`、`approver`、`admin`，密码均为 `DEMO_PASSWORD`。账号为课程演示用，禁止用于真实业务。
+
+## 四、启动步骤
+
+首次准备依赖（需要网络）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
+```
+
+本地模式三个终端，工作目录均为项目根目录：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 finance
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 backend
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 frontend
+```
+
+Compose 模式（需要 Docker 运行）：
+
+```powershell
+Copy-Item .env.example .env    # 若已有 .env，保留现有文件不要覆盖
+docker compose up --build -d
+```
+
+停机：本地按 `Ctrl+C`；Compose 用 `docker compose down`，不要加 `-v`，否则删除数据卷。
+
+## 五、验证命令
+
+```powershell
+# 单元与流程测试（临时库，覆盖流程、权限、边界、异常、幂等）
+.\.venv\Scripts\python.exe -m pytest -c backend/pytest.ini backend/tests -q
+
+# 真实 HTTP 链路：启动两个服务、校验链路、杀死业务进程后验证审批恢复
+.\.venv\Scripts\python.exe scripts/smoke.py
+
+# 前端类型检查与生产构建
+cd frontend; npm.cmd run build
+
+# 对正在运行的服务执行演示场景与接口约定校验（需先启动 8000 与 8001）
+.\.venv\Scripts\python.exe scripts/verify_system.py
+```
+
+`scripts/smoke.py` 与 `scripts/verify_system.py` 的区别：前者自起自停临时服务、可用作提交前门禁；后者校验**标准端口上真实运行的整套服务**，包含 README 的六个演示步骤，适合联调与验收现场。
+
+## 六、D1 实测结果
+
+在 Windows 11 + Python 3.14.7 + Node 26.8.1 上执行，结果为合并周勃 D1 后端提交后的状态。
+
+| 项目 | 结果 |
+|---|---|
+| `scripts/setup.ps1` 等价步骤（venv + 后端依赖、`npm ci`） | 通过，无漏洞报告 |
+| `pytest backend/tests` | 47 项全部通过 |
+| `scripts/smoke.py` | 通过：真实 HTTP、唯一任务编号、按编号查询、任务与凭证持久化、提交幂等、预算样例与不扣减、自动初审、审批续跑、预算拒绝、指标 |
+| `npm run build` | 通过，产物 `dist/`（js 88.55 kB、css 12.57 kB） |
+| 本地三服务启动 | 通过：8000/8001 健康检查 200，5173 首页 200 且 `/api` 代理到 8000 |
+| `scripts/verify_system.py` | 36 项断言全部通过（六个演示步骤 + 校验、权限、幂等、指标、工具鉴权） |
+| Docker Compose | 未验证：当前环境无 Docker，PostgreSQL 链路需在有 Docker 的机器上补测 |
+
+## 七、已知问题与常见故障
+
+- 端口被占用：先确认没有残留进程；本地固定使用 8000、8001、5173。
+- SQLite 单进程限制：不要同时起两个业务后端指向同一个 `tasks.db`，写操作会互相干扰。
+- `backend/data/` 与 `frontend/node_modules/`、`frontend/dist/`、`work/` 均不入库；换机器后必须重新执行依赖准备。
+- 数据重置：删除 `backend/data/tasks.db`、`backend/data/finance.db` 后重启；Compose 见 `docs/DATA-DESIGN.md` 第七节。
+- 任务跨账号、跨角色变化不会自动刷新，需要点击“刷新”；轮询或推送不在 D1 范围。
+- Compose 首次启动较慢，`db`、`finance` 均带健康检查，后端会等待其就绪；若失败先看 `docker compose logs finance`。

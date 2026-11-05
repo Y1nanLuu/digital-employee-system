@@ -49,7 +49,9 @@ def stop(process):
         except subprocess.TimeoutExpired:
             process.kill();process.wait(timeout=5)
 
-with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-') as temp:
+# ignore_cleanup_errors：Windows上被终止的uvicorn进程释放SQLite文件句柄可能略晚于exit，
+# 断言已全部通过时不应因临时目录清理失败而返回非零退出码。
+with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_errors=True) as temp:
     temp=Path(temp)
     backend_port,finance_port=port(),port()
     backend_url=f'http://127.0.0.1:{backend_port}'
