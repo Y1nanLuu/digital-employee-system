@@ -22,6 +22,41 @@
 - Compose模式需要Docker Engine / Docker Desktop正在运行，业务库使用PostgreSQL。
 - 首次安装依赖及拉取镜像需要网络。
 
+## 本地启动 Linux / macOS
+
+在项目根目录创建独立环境并安装后端依赖：
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r backend/requirements.txt
+```
+
+然后在两个终端中分别启动服务，每个终端都从项目根目录开始：
+
+```bash
+# 终端一：模拟财务服务
+cd backend
+../.venv/bin/python -m uvicorn finance.main:app --host 127.0.0.1 --port 8001
+```
+
+```bash
+# 终端二：业务服务
+cd backend
+../.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+业务接口文档为 http://127.0.0.1:8000/docs ，财务接口文档为 http://127.0.0.1:8001/docs 。业务接口使用下文的演示角色账号；财务接口展开对应操作，在 `authorization` 请求头中填写 `Bearer local-finance-key`（如已设置 `FINANCE_KEY`，则替换其中的密钥）。
+
+如需员工端页面，在第三个终端从项目根目录执行：
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+浏览器打开 http://localhost:5173 。
+
 ## 本地启动 Windows PowerShell
 
 在项目根目录执行：
@@ -67,6 +102,15 @@ docker compose up --build -d
 
 ## 验证
 
+Linux / macOS，在项目根目录执行：
+
+```bash
+.venv/bin/python -m pytest -c backend/pytest.ini backend/tests -q
+.venv/bin/python scripts/smoke.py
+```
+
+Windows PowerShell：
+
 ```powershell
 # 项目根目录
 .\.venv\Scripts\python.exe -m pytest -c backend/pytest.ini backend/tests -q
@@ -77,6 +121,8 @@ npm.cmd run build
 ```
 
 集成测试使用独立临时SQLite数据库，以及连接两个FastAPI应用的HTTP模拟传输，验证接口契约和状态流转，不覆盖个人开发数据。Docker镜像构建与PostgreSQL联调需在Docker可运行环境另行验证。
+
+`smoke.py` 在随机本机端口启动两个真实服务，验证唯一任务编号、按编号查询、两个服务重启后的任务及凭证持久化、重复提交、审批恢复和预算样例。该脚本访问本机服务时绕过代理，支持已设置 `HTTP_PROXY` / `HTTPS_PROXY` 的开发终端。
 
 ## 演示步骤
 
@@ -109,6 +155,8 @@ compose.yaml               PostgreSQL及三服务编排
 卢亦楠维护需求和验收；张程量负责架构、数据库及集成；王可扩展员工端；王丹蕊扩展审批台与指标；周勃负责业务状态机和财务工具；夏一洲接入AI并完善检索；王欣茹扩展测试与质量材料。
 
 员工端支持表单草稿恢复、金额/日期/说明校验、字段提取建议、提交幂等保护、任务搜索与状态筛选，以及制度依据和执行时间线展示。王可的实现说明、自测清单与个人总结见 docs 目录。
+
+报销提交、任务查询及模拟财务接口的本次实现记录和验收结果见 [周勃-后端开发日志](docs/周勃-后端开发日志.md)。
 
 ## 现有限制和下一步
 

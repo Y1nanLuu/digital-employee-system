@@ -1,9 +1,10 @@
 """业务API与模拟财务API的集成契约测试，不调用真实外部服务。"""
 import os
+import json
 import tempfile
 from pathlib import Path
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
 import httpx
 import pytest
@@ -146,7 +147,7 @@ def test_writeback_failure_preserves_decision(clients,monkeypatch):
     base_client=TestClient.__bases__[0]
     def dispatch(request):
         if request.url.path.startswith('/budgets/'):
-            return httpx.Response(200,json={'project_id':'P001','available':'10000.00'},request=request)
+            return httpx.Response(200,json=budget_sample(),request=request)
         return httpx.Response(503,json={'detail':'simulated outage'},request=request)
     monkeypatch.setattr(services.httpx,'Client',lambda **kwargs: base_client(transport=httpx.MockTransport(dispatch),**kwargs))
     task=submit(client).json()
@@ -161,7 +162,7 @@ def test_recheck_budget_after_approval(clients,monkeypatch):
     base_client=TestClient.__bases__[0]
     def dispatch(request):
         if request.url.path.startswith('/budgets/'):
-            return httpx.Response(200,json={'project_id':'P001','available':'10.00'},request=request)
+            return httpx.Response(200,json=budget_sample(available='10.00'),request=request)
         response=finance.request(request.method,request.url.path,content=request.content,headers=dict(request.headers))
         return httpx.Response(response.status_code,json=response.json(),request=request)
     monkeypatch.setattr(services.httpx,'Client',lambda **kwargs: base_client(transport=httpx.MockTransport(dispatch),**kwargs))
@@ -179,3 +180,136 @@ def test_ownership_and_self_approval(clients):
     assert client.get('/api/tasks/'+task['id'],auth=('employee','demo123')).status_code==404
     assert client.get('/api/tasks',auth=('employee','demo123')).json()==[]
     assert approve(client,task).status_code==403
+
+
+def budget_sample(**changes):
+    return {'project_id': 'P001', 'available': '10000.00',
+            'currency': 'CNY', 'simulated': True, **changes}
+
+
+def test_submission_has_unique_id_and_can_be_queried(clients):
+    from app.database import SessionLocal
+    from app.models import Task
+
+    client, _ = clients
+    body = claim()
+    first = submit(client, body).json()
+    second = submit(client, body).json()
+    assert UUID(first['id']).version == 4
+    assert first['id'] != second['id']
+    detail = client.get('/api/tasks/' + first['id'], auth=('employee', 'demo123'))
+    assert detail.status_code == 200
+    assert detail.json() == first
+    assert 'request_key' not in first
+    with SessionLocal() as db:
+        saved = db.get(Task, first['id'])
+        assert saved.payload == body
+        assert saved.owner == 'employee' and saved.status == 'succeeded'
+
+
+def test_query_and_submission_replay_survive_database_reconnect(clients):
+    client, _ = clients
+    key = str(uuid4())
+    original = submit(client, key=key).json()
+    engine.dispose()
+    finance_engine.dispose()
+    with TestClient(app) as restarted:
+        detail = restarted.get('/api/tasks/' + original['id'], auth=('employee', 'demo123'))
+        assert detail.json() == original
+        assert submit(restarted, key=key).json() == original
+        assert len(restarted.get('/api/tasks', auth=('employee', 'demo123')).json()) == 1
+
+
+@pytest.mark.parametrize('key', [None, 'short', ' ' * 8, 'x' * 101])
+def test_invalid_submission_key_creates_no_task(clients, key):
+    client, _ = clients
+    headers = {} if key is None else {'Idempotency-Key': key}
+    response = client.post('/api/tasks', json=claim(), auth=('employee', 'demo123'), headers=headers)
+    assert response.status_code == 422
+    assert client.get('/api/tasks', auth=('employee', 'demo123')).json() == []
+
+
+def test_task_query_missing_id_and_authentication(clients):
+    client, _ = clients
+    assert client.get('/api/tasks/' + str(uuid4()), auth=('employee', 'demo123')).status_code == 404
+    task = submit(client).json()
+    assert client.get('/api/tasks/' + task['id']).status_code == 401
+    for role in ['approver', 'admin']:
+        assert client.get('/api/tasks/' + task['id'], auth=(role, 'demo123')).json() == task
+
+
+@pytest.mark.parametrize('project_id,available', [('P001', '10000.00'), ('P002', '500.00')])
+def test_budget_query_returns_documented_sample(clients, project_id, available):
+    _, finance = clients
+    headers = {'Authorization': 'Bearer local-finance-key'}
+    response = finance.get('/budgets/' + project_id, headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {'project_id': project_id, 'available': available,
+                               'currency': 'CNY', 'simulated': True}
+    assert finance.get('/budgets/P999', headers=headers).status_code == 404
+    assert finance.get('/budgets/' + project_id,
+                       headers={'Authorization': 'Bearer incorrect-key'}).status_code == 401
+
+
+@pytest.mark.parametrize('changes', [{'task_id': 'not-a-uuid'}, {'reason': '   '},
+                                     {'decision': 'paid'}])
+def test_invalid_finance_result_is_not_saved(clients, changes):
+    from finance.main import Receipt, Session
+
+    _, finance = clients
+    body = {'task_id': str(uuid4()), 'decision': 'approved', 'reason': '测试初审通过', **changes}
+    response = finance.post('/results', json=body,
+                            headers={'Authorization': 'Bearer local-finance-key'})
+    assert response.status_code == 422
+    with Session() as db:
+        assert db.get(Receipt, body['task_id']) is None
+
+
+@pytest.mark.parametrize('response_body', [
+    [], {}, budget_sample(available='invalid'), budget_sample(available='NaN'),
+    budget_sample(available='Infinity'), budget_sample(available='-1.00'),
+    budget_sample(available='1.001'), budget_sample(project_id='P002'),
+    budget_sample(currency='USD'), budget_sample(simulated=False),
+])
+def test_invalid_budget_response_produces_queryable_failure(clients, monkeypatch, response_body):
+    client, _ = clients
+    base_client = TestClient.__bases__[0]
+
+    def dispatch(request):
+        return httpx.Response(200, json=response_body, request=request)
+
+    monkeypatch.setattr(services.httpx, 'Client', lambda **kwargs:
+                        base_client(transport=httpx.MockTransport(dispatch), **kwargs))
+    response = submit(client)
+    assert response.status_code == 201
+    task = response.json()
+    assert task['status'] == 'failed'
+    assert task['result']['error']
+    assert len(task['logs']) == 1 and task['logs'][0]['success'] is False
+    assert 'receipt' not in task['result']
+    assert client.get('/api/tasks/' + task['id'], auth=('employee', 'demo123')).json() == task
+
+
+@pytest.mark.parametrize('changes', [
+    {'task_id': str(uuid4())}, {'decision': 'rejected'}, {'reason': '不匹配的审核意见'},
+    {'receipt_id': ''}, {'simulated': False},
+])
+def test_invalid_receipt_does_not_complete_task(clients, monkeypatch, changes):
+    client, finance = clients
+    base_client = TestClient.__bases__[0]
+
+    def dispatch(request):
+        if request.url.path.startswith('/budgets/'):
+            response = finance.get(request.url.path, headers=dict(request.headers))
+            return httpx.Response(response.status_code, json=response.json(), request=request)
+        body = json.loads(request.content)
+        receipt = {**body, 'receipt_id': 'demo-' + body['task_id'], 'simulated': True, **changes}
+        return httpx.Response(200, json=receipt, request=request)
+
+    monkeypatch.setattr(services.httpx, 'Client', lambda **kwargs:
+                        base_client(transport=httpx.MockTransport(dispatch), **kwargs))
+    task = submit(client).json()
+    assert task['status'] == 'failed'
+    assert task['result']['decision'] == 'approved' and 'receipt' not in task['result']
+    assert task['logs'][0]['success'] is True and task['logs'][1]['success'] is False
+    assert client.get('/api/tasks/' + task['id'], auth=('employee', 'demo123')).json() == task
