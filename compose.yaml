@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: employee
+      POSTGRES_USER: employee
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U employee -d employee"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  finance:
+    build: ./backend
+    command: ["uvicorn", "finance.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    environment:
+      FINANCE_KEY: ${FINANCE_KEY:-local-finance-key}
+    volumes:
+      - finance-data:/app/data
+    ports:
+      - "127.0.0.1:8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://employee:${POSTGRES_PASSWORD:-local-postgres-password}@db:5432/employee
+      FINANCE_URL: http://finance:8001
+      FINANCE_KEY: ${FINANCE_KEY:-local-finance-key}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-demo123}
+    depends_on:
+      db:
+        condition: service_healthy
+      finance:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:80"
+volumes:
+  postgres-data:
+  finance-data:
