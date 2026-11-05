@@ -1,65 +1,62 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { request, setCredentials, type User, type Task } from './api'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { request, setCredentials, type Task, type User } from './api'
+
+type View = 'overview' | 'submit' | 'tasks'
+type Metrics = Record<string, number | null>
+const labels: Record<string, string> = { queued: '待执行', running: '智能初审中', awaiting_approval: '待人工审批', writing_back: '结果写回中', succeeded: '初审通过', rejected: '初审拒绝', failed: '处理异常' }
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+const defaultForm = { project_id: 'P001', category: '交通费', amount: '', expense_date: today, description: '' }
 const username = ref('employee'), password = ref('demo123'), user = ref<User | null>(null)
-const tasks = ref<Task[]>([]), selected = ref<Task | null>(null), metrics = ref<Record<string, number | null> | null>(null)
-const busy = ref(false), error = ref(''), note = ref(''), confirmed = ref(false), comment = ref(''), basis = ref('')
-const date = new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Shanghai', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date())
-const form = reactive({project_id:'P001', category:'交通费', amount:'300.00', expense_date:date, description:'客户现场往返交通费300元'})
-const labels: Record<string,string> = {queued:'待执行',running:'处理中',awaiting_approval:'待人工审批',writing_back:'写回中',succeeded:'初审通过',rejected:'初审拒绝',failed:'技术失败'}
-let submitKey = crypto.randomUUID()
-let submittedPayload: string | null = null
-async function run(action: () => Promise<void>) { busy.value=true; error.value=''; try { await action() } catch(e) { error.value=e instanceof Error?e.message:String(e) } finally { busy.value=false } }
-async function refresh() {
- tasks.value=await request<Task[]>('/tasks')
- if(selected.value) selected.value=tasks.value.find(t=>t.id===selected.value?.id) || null
- if(user.value?.role !== 'employee') metrics.value=await request('/metrics')
-}
-function login() { run(async()=>{setCredentials(username.value,password.value); user.value=await request<User>('/me'); await refresh()}) }
-function logout() {user.value=null;tasks.value=[];selected.value=null;metrics.value=null;setCredentials('','');error.value='';note.value='';comment.value='';basis.value=''}
-function parse() {run(async()=>{ const data=await request<{suggested_amount:string|null;suggested_category:string|null;message:string}>('/parse','POST',{description:form.description}); note.value=JSON.stringify(data);confirmed.value=false })}
-function submit() {run(async()=>{
- if(!confirmed.value) throw new Error('请核对原始说明与字段并勾选确认')
- const payload={...form,confirmed:true};const signature=JSON.stringify(payload)
- if(submittedPayload !== signature) {submitKey=crypto.randomUUID();submittedPayload=signature}
- selected.value=await request<Task>('/tasks','POST',payload,submitKey)
- submitKey=crypto.randomUUID();submittedPayload=null;confirmed.value=false;await refresh()
-})}
-function approve(decision:string) {run(async()=>{
- if(!selected.value)return
- selected.value=await request<Task>(`/tasks/${selected.value.id}/approval`,'POST',{decision,comment:comment.value,manual_basis:basis.value})
- comment.value='';basis.value='';await refresh()
-})}
-const percent=(v:number|null|undefined)=>v==null?'暂无数据':`${(v*100).toFixed(1)}%`
-const seconds=(v:number|null|undefined)=>v==null?'暂无数据':`${v.toFixed(2)}秒`
-function choose(task:Task){selected.value=task;comment.value='';basis.value=''}
+const tasks = ref<Task[]>([]), selected = ref<Task | null>(null), metrics = ref<Metrics | null>(null)
+const view = ref<View>('overview'), busy = ref(false), loadingTasks = ref(false), error = ref('')
+const note = ref<{ suggested_amount: string | null; suggested_category: string | null; message: string } | null>(null)
+const confirmed = ref(false), comment = ref(''), basis = ref(''), query = ref(''), statusFilter = ref('')
+const form = reactive({ ...defaultForm }), touched = reactive<Record<string, boolean>>({})
+let submitKey = crypto.randomUUID(), submittedPayload: string | null = null
+const isEmployee = computed(() => user.value?.role === 'employee')
+const displayName = computed(() => user.value?.name || user.value?.username || '')
+const filteredTasks = computed(() => tasks.value.filter(task => {
+  const needle = query.value.trim().toLowerCase()
+  return (!statusFilter.value || task.status === statusFilter.value) && (!needle || `${task.id} ${task.payload.category} ${task.payload.description} ${task.payload.project_id}`.toLowerCase().includes(needle))
+}))
+const summary = computed(() => ({ total: tasks.value.length, active: tasks.value.filter(t => ['queued','running','writing_back'].includes(t.status)).length, pending: tasks.value.filter(t => t.status === 'awaiting_approval').length, done: tasks.value.filter(t => ['succeeded','rejected','failed'].includes(t.status)).length }))
+const errors = computed(() => ({ amount: !form.amount ? '请输入报销金额' : Number(form.amount) <= 0 || Number(form.amount) > 5000 ? '金额须在 0.01—5000 元之间' : '', expense_date: !form.expense_date ? '请选择费用发生日期' : form.expense_date > today ? '费用日期不能晚于今天' : '', description: !form.description.trim() ? '请输入报销说明' : form.description.trim().length < 10 ? '请至少填写 10 个字，便于准确初审' : '' }))
+const formValid = computed(() => Object.values(errors.value).every(value => !value))
+function money(value: string) { return new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(Number(value)) }
+function dateTime(value: string) { return new Date(value).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }
+function resultText(task: Task) { const result = task.result as Record<string, unknown>; return String(result.reason || (task.status === 'succeeded' ? '制度与预算核验通过，初审建议通过。' : task.status === 'awaiting_approval' ? '自动核验完成，等待审批人处理。' : '任务正在处理，请稍后刷新。')) }
+function resultDecision(task: Task) { return String((task.result as Record<string, unknown>).decision || '') }
+function markAllTouched() { Object.assign(touched, { amount: true, expense_date: true, description: true }) }
+function navigate(next: View) { view.value = next; error.value = ''; if (next !== 'tasks') query.value = '' }
+async function run(action: () => Promise<void>) { busy.value = true; error.value = ''; try { await action() } catch (e) { error.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function refresh() { loadingTasks.value = true; try { tasks.value = await request<Task[]>('/tasks'); if (selected.value) selected.value = tasks.value.find(t => t.id === selected.value?.id) || null; if (user.value?.role !== 'employee') metrics.value = await request<Metrics>('/metrics') } finally { loadingTasks.value = false } }
+function login() { run(async () => { setCredentials(username.value, password.value); user.value = await request<User>('/me'); view.value = 'overview'; await refresh() }) }
+function logout() { user.value = null; tasks.value = []; selected.value = null; metrics.value = null; setCredentials('', ''); error.value = ''; note.value = null; comment.value = ''; basis.value = '' }
+function parse() { run(async () => { if (!form.description.trim()) { touched.description = true; throw new Error('请先填写报销说明，再查看字段提取建议') }; note.value = await request('/parse', 'POST', { description: form.description }) }) }
+function submit() { run(async () => { markAllTouched(); if (!formValid.value) throw new Error('请修正表单中的错误后再提交'); if (!confirmed.value) throw new Error('请核对字段并勾选确认'); const payload = { ...form, amount: Number(form.amount).toFixed(2), description: form.description.trim(), confirmed: true }; const signature = JSON.stringify(payload); if (submittedPayload !== signature) { submitKey = crypto.randomUUID(); submittedPayload = signature }; selected.value = await request<Task>('/tasks', 'POST', payload, submitKey); submitKey = crypto.randomUUID(); submittedPayload = null; confirmed.value = false; note.value = null; Object.assign(form, defaultForm); Object.keys(touched).forEach(key => delete touched[key]); localStorage.removeItem('employee-claim-draft'); await refresh(); view.value = 'tasks' }) }
+function approve(decision: string) { run(async () => { if (!selected.value) return; selected.value = await request<Task>(`/tasks/${selected.value.id}/approval`, 'POST', { decision, comment: comment.value, manual_basis: basis.value }); comment.value = ''; basis.value = ''; await refresh() }) }
+function choose(task: Task) { selected.value = task; comment.value = ''; basis.value = '' }
+function percent(value: number | null | undefined) { return value == null ? '暂无数据' : `${(value * 100).toFixed(1)}%` }
+function seconds(value: number | null | undefined) { return value == null ? '暂无数据' : `${value.toFixed(2)} 秒` }
+watch(form, value => { if (user.value?.role === 'employee') localStorage.setItem('employee-claim-draft', JSON.stringify(value)); confirmed.value = false }, { deep: true })
+onMounted(() => { try { const draft = JSON.parse(localStorage.getItem('employee-claim-draft') || 'null'); if (draft) Object.assign(form, draft) } catch { localStorage.removeItem('employee-claim-draft') } })
 </script>
 
 <template>
- <header><div><small>中小企业办公助手 · 课程演示</small><h1>数字员工工作台</h1></div><div v-if="user">{{user.name}} <button @click="logout" :disabled="busy">退出</button></div></header>
- <p class="banner">费用报销初审 · 规则基线模式 · 使用模拟制度与预算，不执行资金支付</p>
- <p v-if="error" role="alert" class="error">{{error}}</p>
- <section v-if="!user" class="login"><h2>选择演示身份</h2><form @submit.prevent="login"><label>账号<select v-model="username"><option value="employee">员工</option><option value="approver">审批人</option><option value="admin">管理员</option></select></label><label>密码<input v-model="password" type="password" required autocomplete="current-password"></label><button :disabled="busy">登录工作台</button></form><p>本地默认演示密码：demo123；若已改配置，请使用新密码。</p></section>
- <main v-else>
-  <section v-if="metrics" class="metrics"><div><small>任务总数</small><strong>{{metrics.total}}</strong></div><div><small>技术执行完成率</small><strong>{{percent(metrics.completion_rate)}}</strong></div><div><small>转人工率</small><strong>{{percent(metrics.manual_rate)}}</strong></div><div><small>平均系统处理耗时</small><strong>{{seconds(metrics.average_processing_seconds)}}</strong></div><p>完成率包含初审拒绝；系统耗时扣除人工等待。平均端到端耗时：{{seconds(metrics.average_end_to_end_seconds)}}</p></section>
-  <div class="columns">
-   <section v-if="user.role==='employee'"><h2>提交报销初审</h2><form @submit.prevent="submit">
-    <label>项目<select v-model="form.project_id" @change="confirmed=false"><option>P001</option><option>P002</option></select></label>
-    <label>费用类别<select v-model="form.category" @change="confirmed=false"><option>交通费</option><option>办公用品</option><option>其他</option></select></label>
-    <label>金额（元）<input v-model="form.amount" type="number" min="0.01" max="5000" step="0.01" required @input="confirmed=false"></label>
-    <label>发生日期<input v-model="form.expense_date" type="date" :max="date" required @input="confirmed=false"></label>
-    <label>报销说明<textarea v-model="form.description" maxlength="500" required @input="confirmed=false"></textarea></label>
-    <button type="button" @click="parse" :disabled="busy">查看字段提取建议</button><p v-if="note" class="hint">{{note}}</p>
-    <label class="check"><input v-model="confirmed" type="checkbox">我已核对说明与金额、类别及项目编号，确认字段无误</label>
-    <button :disabled="busy || !confirmed">{{busy?'处理中…':'确认并提交'}}</button>
-   </form></section>
-   <section><div class="section-head"><h2>任务列表</h2><button @click="run(refresh)" :disabled="busy">刷新</button></div><p v-if="!tasks.length">暂无任务，请先使用员工账号提交。</p><button v-for="task in tasks" :key="task.id" class="task" :class="{active:selected?.id===task.id}" @click="choose(task)"><b>{{task.payload.category}} · ¥{{task.payload.amount}}</b><span>{{labels[task.status] || task.status}}</span><small>{{task.id}}</small></button></section>
-   <section v-if="selected" class="detail"><h2>任务详情</h2><p class="muted">{{selected.id}} · {{labels[selected.status]}}</p><p>{{selected.payload.description}}</p><h3>初审与执行结果</h3><pre>{{JSON.stringify(selected.result,null,2)}}</pre>
-    <h3>判定依据</h3><p v-if="!selected.citations.length">暂无适用依据，需要人工确认。</p><article v-for="rule in selected.citations" :key="rule.id"><b>{{rule.id}}</b> {{rule.text}}<small>{{rule.source}} · {{rule.version}}</small></article>
-    <form v-if="user.role==='approver' && selected.status==='awaiting_approval'" @submit.prevent="approve('approve')"><h3>人工审批</h3><label>审批意见<textarea v-model="comment" required maxlength="500"></textarea></label><label v-if="!selected.citations.length">人工依据（通过时必填）<textarea v-model="basis" maxlength="1000"></textarea></label><div class="actions"><button :disabled="busy">通过并继续</button><button type="button" class="danger" @click="approve('reject')" :disabled="busy || !comment.trim()">拒绝初审</button></div></form>
-    <h3>执行时间线</h3><ol><li v-for="(item,i) in selected.events" :key="i"><b>{{labels[item.status]}}</b> {{item.message}}<small>{{new Date(item.at).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}}</small></li></ol>
-    <details><summary>工具调用日志</summary><pre>{{JSON.stringify(selected.logs,null,2)}}</pre></details><details><summary>审批记录</summary><pre>{{JSON.stringify(selected.approvals,null,2)}}</pre></details>
-   </section>
+  <div v-if="!user" class="login-shell"><section class="login-card"><div class="brand large"><span>智</span><div><b>智报</b><small>数字员工费用工作台</small></div></div><div class="login-copy"><p class="eyebrow">EXPENSE ASSISTANT</p><h1>欢迎回来</h1><p>登录后提交报销、追踪初审进度并查看制度依据。</p></div><p v-if="error" role="alert" class="error">{{ error }}</p><form @submit.prevent="login" class="login-form"><label>演示身份<select v-model="username"><option value="employee">员工 · 报销申请</option><option value="approver">审批人 · 人工复核</option><option value="admin">管理员 · 运行指标</option></select></label><label>密码<input v-model="password" type="password" required autocomplete="current-password"></label><button class="primary full" :disabled="busy">{{ busy ? '正在登录…' : '进入工作台' }}</button></form><p class="login-hint">本地默认密码 demo123。本系统使用模拟制度与预算，不执行真实资金支付。</p></section></div>
+  <div v-else class="app-shell"><aside class="sidebar"><div class="brand"><span>智</span><div><b>智报</b><small>数字员工工作台</small></div></div><nav><button :class="{ active: view === 'overview' }" @click="navigate('overview')"><i>◫</i>工作概览</button><button v-if="isEmployee" :class="{ active: view === 'submit' }" @click="navigate('submit')"><i>＋</i>发起报销</button><button :class="{ active: view === 'tasks' }" @click="navigate('tasks')"><i>☷</i>{{ isEmployee ? '我的任务' : '任务与审批' }}</button></nav><div class="sidebar-note"><i></i><span>规则基线服务已连接</span><small>制度版本 demo-v1</small></div></aside>
+    <main class="workspace"><header class="topbar"><div><small>数字员工工作台</small><b> / {{ view === 'overview' ? '工作概览' : view === 'submit' ? '发起报销' : isEmployee ? '我的任务' : '任务与审批' }}</b></div><div class="account"><span>{{ displayName.slice(0, 1) }}</span><div><b>{{ displayName }}</b><small>{{ user.role === 'employee' ? '员工' : user.role === 'approver' ? '审批人' : '管理员' }}</small></div><button @click="logout" :disabled="busy">退出</button></div></header><p v-if="error" role="alert" class="error page-error">{{ error }}<button @click="error = ''" aria-label="关闭">×</button></p>
+      <div v-if="view === 'overview'" class="page"><section class="hero"><div><p class="eyebrow">EXPENSE ASSISTANT</p><h1>{{ isEmployee ? `下午好，${displayName}` : `${displayName}工作台` }}</h1><p>{{ isEmployee ? '数字员工会核对制度、预算和字段信息，并给出可追溯的初审意见。' : '查看真实任务、审批记录和系统运行指标。' }}</p></div><button v-if="isEmployee" class="primary" @click="navigate('submit')">＋ 发起一笔报销</button></section>
+        <section v-if="isEmployee" class="stats"><article><i>◇</i><div><strong>{{ summary.total }}</strong><small>累计提交</small></div></article><article><i>◷</i><div><strong>{{ summary.pending }}</strong><small>待人工审批</small></div></article><article><i>◎</i><div><strong>{{ summary.active }}</strong><small>处理中</small></div></article><article><i>✓</i><div><strong>{{ summary.done }}</strong><small>已完成</small></div></article></section>
+        <section v-else-if="metrics" class="stats"><article><i>◇</i><div><strong>{{ metrics.total }}</strong><small>任务总数</small></div></article><article><i>✓</i><div><strong>{{ percent(metrics.completion_rate) }}</strong><small>技术执行完成率</small></div></article><article><i>◷</i><div><strong>{{ percent(metrics.manual_rate) }}</strong><small>转人工率</small></div></article><article><i>◎</i><div><strong>{{ seconds(metrics.average_processing_seconds) }}</strong><small>平均系统耗时</small></div></article></section>
+        <div class="section-title"><div><h2>最近任务</h2><p>跟踪报销从提交到最终处理的全过程</p></div><button class="text" @click="navigate('tasks')">查看全部 →</button></div><section class="panel table-panel"><table><thead><tr><th>任务编号</th><th>报销事项</th><th>金额</th><th>提交时间</th><th>当前状态</th><th></th></tr></thead><tbody><tr v-for="task in tasks.slice(0, 5)" :key="task.id"><td class="mono">{{ task.id.slice(0, 8) }}…</td><td><b>{{ task.payload.category }}</b><small>{{ task.payload.description }}</small></td><td>{{ money(task.payload.amount) }}</td><td>{{ dateTime(task.created_at) }}</td><td><span class="status" :class="task.status">{{ labels[task.status] || task.status }}</span></td><td><button class="text" @click="choose(task); navigate('tasks')">查看详情 →</button></td></tr></tbody></table><div v-if="!tasks.length" class="empty"><b>暂无报销任务</b><p>发起一笔报销后，任务会显示在这里。</p></div></section>
+      </div>
+      <div v-else-if="view === 'submit' && isEmployee" class="page narrow"><div class="page-title"><div><button class="back" @click="navigate('overview')">←</button><div><h1>发起费用报销</h1><p>请如实填写费用信息，提交前可查看字段提取建议。</p></div></div><span>草稿自动保存</span></div><form @submit.prevent="submit"><section class="panel form-section"><div class="form-heading"><i>01</i><div><h2>基本信息</h2><p>用于核对费用归属、制度与项目预算</p></div></div><div class="form-grid"><label>项目编号 *<select v-model="form.project_id"><option value="P001">P001 · 核心业务项目</option><option value="P002">P002 · 市场拓展项目</option></select></label><label>报销类别 *<select v-model="form.category"><option>交通费</option><option>办公用品</option><option>其他</option></select></label><label>报销金额（元）*<div class="money-input"><span>¥</span><input v-model="form.amount" type="number" min="0.01" max="5000" step="0.01" placeholder="0.00" @blur="touched.amount = true"></div><small v-if="touched.amount && errors.amount" class="field-error">{{ errors.amount }}</small></label><label>费用发生日期 *<input v-model="form.expense_date" type="date" :max="today" @blur="touched.expense_date = true"><small v-if="touched.expense_date && errors.expense_date" class="field-error">{{ errors.expense_date }}</small></label><label class="wide">报销说明 *<textarea v-model="form.description" maxlength="500" placeholder="请说明费用用途、地点或参与事项（至少 10 字）" @blur="touched.description = true"></textarea><span class="counter">{{ form.description.length }}/500</span><small v-if="touched.description && errors.description" class="field-error">{{ errors.description }}</small></label></div></section>
+          <section class="panel form-section"><div class="form-heading"><i>02</i><div><h2>智能字段核对</h2><p>解析说明中的金额与类别建议，不会自动覆盖原字段</p></div></div><button type="button" class="secondary" @click="parse" :disabled="busy">查看字段提取建议</button><div v-if="note" class="parse-result"><b>{{ note.message }}</b><p>建议类别：{{ note.suggested_category || '未识别' }}　建议金额：{{ note.suggested_amount ? `¥${note.suggested_amount}` : '未识别' }}</p></div><label class="check"><input v-model="confirmed" type="checkbox">我已核对原始说明与金额、类别及项目编号，确认字段无误</label></section><div class="form-actions"><button type="button" class="secondary" @click="navigate('overview')">取消</button><button class="primary" :disabled="busy || !confirmed">{{ busy ? '正在提交与初审…' : '提交并开始初审' }}</button></div></form></div>
+      <div v-else class="page"><div class="page-title"><div><div><h1>{{ isEmployee ? '我的报销任务' : '任务与人工审批' }}</h1><p>查看初审意见、制度依据、执行时间线与最终结果。</p></div></div><div class="title-actions"><button class="secondary" @click="run(refresh)" :disabled="busy || loadingTasks">{{ loadingTasks ? '刷新中…' : '刷新' }}</button><button v-if="isEmployee" class="primary" @click="navigate('submit')">＋ 发起报销</button></div></div><section class="panel filters"><label>⌕<input v-model="query" placeholder="搜索任务编号、项目或报销说明"></label><select v-model="statusFilter"><option value="">全部状态</option><option v-for="(label, status) in labels" :key="status" :value="status">{{ label }}</option></select></section><div class="task-layout"><section class="task-list"><button v-for="task in filteredTasks" :key="task.id" class="task-card" :class="{ active: selected?.id === task.id }" @click="choose(task)"><div><span class="mono">{{ task.id }}</span><h3>{{ task.payload.category }} · {{ money(task.payload.amount) }}</h3><p>{{ task.payload.description }}</p></div><div><small>{{ task.payload.project_id }} · {{ dateTime(task.created_at) }}</small><span class="status" :class="task.status">{{ labels[task.status] || task.status }}</span></div></button><div v-if="!filteredTasks.length" class="panel empty"><b>没有匹配的任务</b><p>尝试更换关键词或状态筛选。</p></div></section>
+          <section v-if="selected" class="panel detail"><div class="detail-title"><div><p class="eyebrow">TASK DETAIL</p><h2>{{ selected.payload.category }} · {{ money(selected.payload.amount) }}</h2><span class="mono">{{ selected.id }}</span></div><span class="status" :class="selected.status">{{ labels[selected.status] }}</span></div><dl><div><dt>项目编号</dt><dd>{{ selected.payload.project_id }}</dd></div><div><dt>费用日期</dt><dd>{{ selected.payload.expense_date }}</dd></div><div class="wide"><dt>报销说明</dt><dd>{{ selected.payload.description }}</dd></div></dl><h3>数字员工初审意见</h3><div class="review" :class="selected.status"><b>{{ resultDecision(selected) === 'approved' ? '建议通过' : resultDecision(selected) === 'rejected' ? '建议拒绝' : labels[selected.status] }}</b><p>{{ resultText(selected) }}</p></div><h3>判定依据</h3><p v-if="!selected.citations.length" class="muted">暂无适用制度依据，需要人工确认。</p><article v-for="rule in selected.citations" :key="rule.id" class="citation"><b>{{ rule.id }}</b><p>{{ rule.text }}</p><small>{{ rule.source }} · {{ rule.version }}</small></article>
+            <form v-if="user.role === 'approver' && selected.status === 'awaiting_approval'" class="approval" @submit.prevent="approve('approve')"><h3>人工审批</h3><label>审批意见 *<textarea v-model="comment" required maxlength="500"></textarea></label><label v-if="!selected.citations.length">人工依据（通过时必填）<textarea v-model="basis" maxlength="1000"></textarea></label><div class="form-actions"><button class="danger" type="button" @click="approve('reject')" :disabled="busy || !comment.trim()">拒绝初审</button><button class="primary" :disabled="busy || !comment.trim()">通过并继续</button></div></form><h3>执行时间线</h3><ol class="timeline"><li v-for="(item, i) in selected.events" :key="i"><b>{{ labels[item.status] || item.status }}</b><p>{{ item.message }}</p><small>{{ dateTime(item.at) }}</small></li></ol><details><summary>工具调用日志</summary><pre>{{ JSON.stringify(selected.logs, null, 2) }}</pre></details><details><summary>审批记录</summary><pre>{{ JSON.stringify(selected.approvals, null, 2) }}</pre></details></section><section v-else class="panel detail-placeholder"><span>◇</span><b>请选择一项任务</b><p>这里将显示初审意见、制度依据和执行时间线。</p></section></div></div>
+    </main>
   </div>
- </main>
 </template>

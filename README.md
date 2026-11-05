@@ -98,7 +98,7 @@ backend/app/knowledge.py     制度检索接口
 backend/app/data/rules.json  模拟制度demo-v1
 backend/finance/main.py      独立模拟财务API
 backend/tests/              流程、权限、边界、异常及幂等测试
-frontend/src/App.vue        页面骨架（待按员工端和审批台拆组件）
+frontend/src/App.vue        员工端概览、报销提交、任务追踪及审批/指标兼容页面
 frontend/src/api.ts         前端接口类型和请求适配
 scripts/                   依赖安装及前台启动脚本
 docs/                      接口约定、架构、分工和后续任务
@@ -106,6 +106,8 @@ compose.yaml               PostgreSQL及三服务编排
 ```
 
 卢亦楠维护需求和验收；张程量负责架构、数据库及集成；王可扩展员工端；王丹蕊扩展审批台与指标；周勃负责业务状态机和财务工具；夏一洲接入AI并完善检索；王欣茹扩展测试与质量材料。
+
+员工端支持表单草稿恢复、金额/日期/说明校验、字段提取建议、提交幂等保护、任务搜索与状态筛选，以及制度依据和执行时间线展示。王可的实现说明、自测清单与个人总结见 docs 目录。
 
 ## 现有限制和下一步
 
