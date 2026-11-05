@@ -102,6 +102,7 @@ frontend/src/App.vue        员工端概览、报销提交、任务追踪及审�
 frontend/src/api.ts         前端接口类型和请求适配
 scripts/                   依赖安装及前台启动脚本
 docs/                      接口约定、架构、分工和后续任务
+ai-module/                 AI与知识检索模块：字段提取（LLM+规则双轨）、制度库16条、检索方案（见ai-module/README.md）
 compose.yaml               PostgreSQL及三服务编排
 ```
 
