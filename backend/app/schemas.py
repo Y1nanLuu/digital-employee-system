@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
+from uuid import UUID
 from zoneinfo import ZoneInfo
 from pydantic import BaseModel, Field, field_validator
 
@@ -40,3 +41,21 @@ class ApprovalInput(BaseModel):
 
 class ParseInput(BaseModel):
     description: str = Field(min_length=1, max_length=500)
+
+
+class TaskResponse(BaseModel):
+    """提交、列表、详情和审批接口共用的任务响应契约。"""
+
+    id: UUID = Field(description='新申请生成的唯一任务编号，重试提交返回原编号')
+    owner: str
+    status: Literal['queued', 'running', 'awaiting_approval', 'writing_back',
+                    'succeeded', 'rejected', 'failed']
+    payload: ClaimInput
+    result: dict[str, Any]
+    citations: list[dict[str, Any]]
+    logs: list[dict[str, Any]]
+    events: list[dict[str, Any]]
+    approvals: list[dict[str, Any]]
+    created_at: str
+    finished_at: str | None
+    manual: bool

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from .auth import current_user
 from .database import Base, engine, get_db
 from .models import Task
-from .schemas import ApprovalInput, ClaimInput, ParseInput
+from .schemas import ApprovalInput, ClaimInput, ParseInput, TaskResponse
 from . import services
 from .ai import parse_fields
 
@@ -39,19 +39,19 @@ def visible_query(user):
     stmt = select(Task).order_by(Task.created_at.desc())
     return stmt.where(Task.owner == user['username']) if user['role'] == 'employee' else stmt
 
-@app.get('/api/tasks')
+@app.get('/api/tasks', response_model=list[TaskResponse])
 def tasks(db: Session = Depends(get_db), user=Depends(current_user)):
     return [services.serialize(t) for t in db.scalars(visible_query(user))]
 
-@app.get('/api/tasks/{task_id}')
+@app.get('/api/tasks/{task_id}', response_model=TaskResponse)
 def task_detail(task_id: str, db: Session = Depends(get_db), user=Depends(current_user)):
     task = db.scalar(visible_query(user).where(Task.id == task_id))
     if not task:
         raise HTTPException(404, '任务不存在')
     return services.serialize(task)
 
-@app.post('/api/tasks', status_code=201)
-def create_task(body: ClaimInput, idempotency_key: str = Header(min_length=8, max_length=100),
+@app.post('/api/tasks', status_code=201, response_model=TaskResponse)
+def create_task(body: ClaimInput, idempotency_key: str = Header(min_length=8, max_length=100, pattern=r'\S'),
                 db: Session = Depends(get_db), user=Depends(current_user)):
     if user['role'] != 'employee':
         raise HTTPException(403, '请使用员工账号提交')
@@ -71,7 +71,7 @@ def create_task(body: ClaimInput, idempotency_key: str = Header(min_length=8, ma
         db.commit()
         return services.serialize(task)
 
-@app.post('/api/tasks/{task_id}/approval')
+@app.post('/api/tasks/{task_id}/approval', response_model=TaskResponse)
 def approval(task_id: str, body: ApprovalInput, db: Session = Depends(get_db), user=Depends(current_user)):
     if user['role'] != 'approver':
         raise HTTPException(403, '该账号没有审批权限')
