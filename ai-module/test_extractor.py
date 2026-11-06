@@ -268,6 +268,61 @@ def test_merge_with_rule_nulls_unpatchable_leak():
     assert merged["submitter"] == "赵敏"          # 正常字段不受影响
 
 
+# ---- 模型多通道配置（deepseek API / 本地千问 / 纯规则） ---------------------
+
+def test_config_resolves_active_provider():
+    """providers 格式：按 active 解析出扁平配置，顶层超时/温度合并。"""
+    cfg = {
+        "active": "local_qwen",
+        "providers": {
+            "local_qwen": {"base_url": "http://127.0.0.1:8010/v1",
+                           "api_key": "local", "model": "m1"},
+            "deepseek": {"base_url": "https://api.deepseek.com/v1",
+                         "api_key": "ENV:DS_KEY", "model": "deepseek-chat"},
+        },
+        "timeout_seconds": 120, "temperature": 0,
+    }
+    resolved = load_config(_tmp_config(cfg))
+    assert resolved["provider"] == "local_qwen"
+    assert resolved["enabled"] is True
+    assert resolved["model"] == "m1"
+    assert resolved["timeout_seconds"] == 120
+
+
+def test_config_rule_mode():
+    """active=rule：计划内纯规则模式，不记降级事件。"""
+    resolved = load_config(_tmp_config({"active": "rule", "providers": {}}))
+    assert resolved == {"enabled": False, "provider": "rule"}
+
+
+def test_config_env_api_key_resolution():
+    """api_key 支持 ENV:VARNAME 形式，运行时从环境变量读取（密钥不入库）。"""
+    import os
+    os.environ["DS_KEY_TEST"] = "sk-test"
+    try:
+        cfg = {"active": "deepseek",
+               "providers": {"deepseek": {
+                   "base_url": "https://api.deepseek.com/v1",
+                   "api_key": "ENV:DS_KEY_TEST", "model": "deepseek-chat"}}}
+        resolved = load_config(_tmp_config(cfg))
+        assert resolved["api_key"] == "sk-test"
+        assert "_api_key_missing" not in resolved
+    finally:
+        del os.environ["DS_KEY_TEST"]
+
+
+def test_missing_env_api_key_falls_back_with_event():
+    """选了 deepseek 但未配置密钥 → 降级规则并留 llm_api_key_missing 事件。"""
+    cfg = {"active": "deepseek",
+           "providers": {"deepseek": {
+               "base_url": "https://api.deepseek.com/v1",
+               "api_key": "ENV:DS_KEY_DEFINITELY_MISSING_XYZ",
+               "model": "deepseek-chat"}}}
+    r = extract(SLIP1, _tmp_config(cfg))
+    assert r["source"] == "rule"
+    assert r["fallback_event"]["trigger"] == "llm_api_key_missing"
+
+
 # ---- 端到端样例 -----------------------------------------------------------
 
 def test_all_sample_slips_meet_expectations():

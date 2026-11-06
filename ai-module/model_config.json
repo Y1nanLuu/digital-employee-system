@@ -1,10 +1,18 @@
 {
-  "enabled": true,
-  "provider": "openai-compatible",
-  "base_url": "http://127.0.0.1:8010/v1",
-  "api_key": "local",
-  "model": "Qwen/Qwen1.5-0.5B-Chat",
+  "active": "local_qwen",
+  "providers": {
+    "local_qwen": {
+      "base_url": "http://127.0.0.1:8010/v1",
+      "api_key": "local",
+      "model": "Qwen/Qwen1.5-0.5B-Chat"
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "ENV:DEEPSEEK_API_KEY",
+      "model": "deepseek-chat"
+    }
+  },
   "timeout_seconds": 120,
   "temperature": 0,
-  "_comment": "base_url 指向 llm_server.py（本机 HF 缓存的 Qwen1.5-0.5B，CPU 推理）。换团队 API 时改 base_url+api_key+model 即可，extractor.py 零改动。timeout 给 120s 是 CPU 推理较慢。"
+  "_comment": "三通道切换: active = deepseek(远程API) / local_qwen(本地llm_server) / rule(纯规则)。DEEPSEEK_API_KEY 通过环境变量注入, 禁止写入本文件(PRD 4.2)。timeout_seconds 按 PRD FR03 默认且上限 120 秒。"
 }

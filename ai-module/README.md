@@ -15,7 +15,7 @@ python demo.py             # 真实模型调用 + 字段仲裁 + 降级演示
 
 > `llm_server.py` 需要含 transformers/torch 的环境（本机系统 Python 已具备；依赖见 `requirements.txt`）。
 > `test_extractor.py` 和 `demo.py` 仅用标准库，任何 Python 3.10+ 可跑。
-> 没有本地服务时把 `model_config.json` 的 `enabled` 改为 `false`，即走纯规则提取。
+> 模型三通道：`model_config.json` 的 `active` 切换 `local_qwen`（本地）/ `deepseek`（远程 API，密钥走环境变量 `DEEPSEEK_API_KEY`）/ `rule`（纯规则）。详见 docs/模型配置与降级方案.md。
 
 ## 与团队框架的集成点（后续工作，本模块不改动现有后端代码）
 

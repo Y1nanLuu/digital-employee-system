@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import math
+import os
 import re
 import urllib.error
 import urllib.request
@@ -377,7 +378,43 @@ def arbitrate(llm_fields: dict, text: str) -> tuple[dict, list, list]:
 # ---------------------------------------------------------------------------
 
 def load_config(config_path: str | Path) -> dict:
-    return json.loads(Path(config_path).read_text(encoding="utf-8"))
+    """读取并解析模型配置，返回扁平化的生效配置。
+
+    支持两种格式：
+    1. providers 格式（推荐，三通道切换）：
+       {"active": "deepseek|local_qwen|rule",
+        "providers": {名称: {base_url, api_key, model}},
+        "timeout_seconds": 120, "temperature": 0}
+       - active=rule → {"enabled": False, "provider": "rule"}（计划内纯规则）
+       - 其余 → 启用所选 provider，合并顶层超时/温度
+    2. 扁平格式（旧版兼容）：{"enabled": bool, "base_url", "api_key", "model", ...}
+
+    api_key 支持 "ENV:VARNAME" 形式：运行时从环境变量读取（密钥不入库，
+    PRD 4.2）。环境变量缺失时置 _api_key_missing=True，由 extract() 降级。
+    """
+    cfg = json.loads(Path(config_path).read_text(encoding="utf-8"))
+    if "providers" in cfg:
+        active = cfg.get("active", "")
+        if active == "rule":
+            return {"enabled": False, "provider": "rule"}
+        if active not in cfg["providers"]:
+            raise ValueError(f"model_config: 未知 provider: {active!r}")
+        merged = {"enabled": True, "provider": active,
+                  "timeout_seconds": cfg.get("timeout_seconds", 120),
+                  "temperature": cfg.get("temperature", 0)}
+        merged.update(cfg["providers"][active])
+    else:
+        merged = dict(cfg)
+
+    key = merged.get("api_key", "")
+    if isinstance(key, str) and key.startswith("ENV:"):
+        resolved = os.environ.get(key[4:], "")
+        if resolved:
+            merged["api_key"] = resolved
+        else:
+            merged["api_key"] = ""
+            merged["_api_key_missing"] = True
+    return merged
 
 
 def extract(text: str, config_path: str | Path = "model_config.json") -> ExtractionResult:
@@ -386,8 +423,11 @@ def extract(text: str, config_path: str | Path = "model_config.json") -> Extract
     source = "rule"
 
     if config.get("enabled"):
-        llm = LLMExtractor(config)
         try:
+            if config.get("_api_key_missing"):
+                # 选中了需密钥的 provider 但环境变量未配置 → 明确降级留痕
+                raise ExtractorError("llm_api_key_missing")
+            llm = LLMExtractor(config)
             result = llm.extract(text)
             # 两遍式仲裁：值校验 → 规则补齐 → 终值再校验（见 arbitrate 文档）
             merged, patched, violations = arbitrate(result["fields"], text)
