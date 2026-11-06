@@ -65,6 +65,17 @@ def test_rule_amount_formats():
         assert got == want, f"{raw} → {got}, 期望 {want}"
 
 
+def test_rule_amount_plain_digits_without_comma():
+    """回归：无千分位逗号的4位以上金额曾被正则第一分支截断为前3位（1500→150）。
+
+    来源：D2 验收反馈（scripts/verify_system.py 检查），2026-11-06。
+    """
+    for raw, want in [("1500元", 1500.0), ("3275元", 3275.0), ("9800", 9800.0),
+                      ("12,000元", 12000.0), ("1,234,567.89", 1234567.89)]:
+        got = RuleExtractor().extract(f"金额：{raw}")["fields"].get("amount")
+        assert got == want, f"{raw} → {got}, 期望 {want}"
+
+
 def test_rule_cn_date_format():
     got = RuleExtractor().extract("费用日期：2026年10月20日至2026年10月25日")["fields"]["expense_date"]
     assert got == "2026-10-20", got
