@@ -142,11 +142,35 @@ expect('财务服务预算查询返回样例', budget.get('available') == '10000
 code, budget2 = call(FINANCE, '/budgets/P002', role=None, headers={'Authorization': f'Bearer {FINANCE_KEY}'})
 expect('P002 预算500', str(budget2.get('available')).startswith('500'), budget2)
 
-# 9. 字段提取建议接口
+# 9. 字段提取建议接口与 AI 适配层
 code, parsed = call(BACKEND, '/api/parse', {'description': '上周出差上海往返高铁票320元，报销'}, role='employee')
-expect('/api/parse 返回 mode/建议金额/需确认', parsed.get('mode') == 'rule_baseline'
-       and parsed.get('suggested_amount') == '320' and parsed.get('requires_confirmation') is True, parsed)
+expect('/api/parse 返回基础契约', all(k in parsed for k in
+       ['mode', 'suggested_amount', 'suggested_category', 'requires_confirmation', 'message']), parsed)
+expect('/api/parse 金额为320', str(parsed.get('suggested_amount')).startswith('320'), parsed.get('suggested_amount'))
 expect('/api/parse 未识别类别时返回 None 而非编造', parsed.get('suggested_category') is None, parsed)
+expect('/api/parse 暴露 ai_enabled 开关状态', isinstance(parsed.get('ai_enabled'), bool), parsed.get('ai_enabled'))
+if parsed.get('ai_enabled'):
+    expect('/api/parse 启用AI时返回来源与结构化字段',
+           parsed.get('source') in ('llm', 'rule') and isinstance(parsed.get('fields'), dict), parsed)
+
+# 10. 同一任务编号贯穿整条链路（页面-任务-日志-审批-财务凭证）
+code, t1_detail = call(BACKEND, f"/api/tasks/{t1['id']}", role='employee')
+expect('任务详情按编号可查且与创建结果一致', t1_detail['id'] == t1['id'] and t1_detail['status'] == t1['status'], t1_detail.get('status'))
+writeback = [log for log in t1_detail['logs'] if log.get('tool') == '/results']
+expect('工具日志中的写回请求携带同一任务编号',
+       len(writeback) == 1 and writeback[0]['request'].get('task_id') == t1['id'], writeback)
+expect('财务凭证编号可由任务编号追溯',
+       t1_detail['result']['receipt']['receipt_id'] == 'demo-' + t1['id'], t1_detail['result'].get('receipt'))
+code, receipt_replay = call(FINANCE, '/results', {'task_id': t1['id'], 'decision': 'approved',
+                                                  'reason': '金额、制度和预算校验通过'},
+                            role=None, headers={'Authorization': f'Bearer {FINANCE_KEY}'})
+expect('财务服务同内容重放返回原凭证', receipt_replay.get('receipt_id') == 'demo-' + t1['id'], receipt_replay.get('receipt_id'))
+try:
+    call(FINANCE, '/results', {'task_id': t1['id'], 'decision': 'rejected', 'reason': '内容不同的重放'},
+         role=None, headers={'Authorization': f'Bearer {FINANCE_KEY}'})
+    expect('财务服务同编号换内容返回409', False, '未返回409')
+except urllib.error.HTTPError as exc:
+    expect('财务服务同编号换内容返回409', exc.code == 409, exc.code)
 
 failed = [r for r in results if not r[1]]
 print(f'\n总计 {len(results)} 项，通过 {len(results) - len(failed)} 项，失败 {len(failed)} 项')

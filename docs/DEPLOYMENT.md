@@ -34,13 +34,16 @@
 | `FINANCE_KEY` | `local-finance-key` | 后端与财务 | 工具密钥，只允许后端持有，前端不接触 |
 | `DEMO_PASSWORD` | `demo123` | 业务后端 | 三个演示账号的统一密码 |
 | `POSTGRES_PASSWORD` | `local-postgres-password` | Compose | 仅 Compose 使用 |
+| `AI_MODULE_ENABLED` | `false` | 业务后端 | 字段提取是否走 ai-module 模型通道；关闭时使用内置规则基线 |
+| `AI_MODULE_CONFIG` | `ai-module/model_config.json` | 业务后端 | 模型通道配置路径，切换 `active` 即可换通道（deepseek/local_qwen/rule） |
+| `AI_PYTHON` | 系统 `python` | `scripts/dev.ps1 ai` | 启动本地模型服务所用解释器，需含 `transformers`/`torch` |
 
 约定：
 
 - `.env.example` 是模板，复制为 `.env` 后生效；`.env` 不入库。
-- `scripts/dev.ps1` 只读取 `DEMO_PASSWORD`、`FINANCE_KEY`、`POSTGRES_PASSWORD` 三项；`DATABASE_URL`、`FINANCE_DATABASE_URL`、`FINANCE_URL` 通过当前终端环境变量覆盖。
+- `scripts/dev.ps1` 只读取 `DEMO_PASSWORD`、`FINANCE_KEY`、`POSTGRES_PASSWORD`、`AI_MODULE_ENABLED`、`AI_MODULE_CONFIG` 五项；`DATABASE_URL`、`FINANCE_DATABASE_URL`、`FINANCE_URL` 通过当前终端环境变量覆盖。
 - 直接运行 uvicorn 不会自动读取 `.env`，需要先在终端设置环境变量。
-- 任何密钥、真实账号凭据不得写入代码、文档和日志。
+- 任何密钥、真实账号凭据不得写入代码、文档和日志；远程模型密钥只通过环境变量注入。
 
 演示账号：`employee`、`approver`、`admin`，密码均为 `DEMO_PASSWORD`。账号为课程演示用，禁止用于真实业务。
 
@@ -59,6 +62,28 @@ powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 finance
 powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 backend
 powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 frontend
 ```
+
+### 可选：启用 ai-module 字段提取
+
+默认关闭，不需要模型也能完整运行。启用时增加一个终端并打开开关：
+
+```powershell
+# 终端四：本地模型服务（端口8010，需要含 transformers/torch 的解释器）
+$env:AI_PYTHON = 'C:\Python311\python.exe'   # 指向具备模型依赖的解释器
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 ai
+
+# 业务后端：在 .env 中设 AI_MODULE_ENABLED=true，或在启动前设置同名环境变量
+```
+
+三条使用路径：
+
+| 目的 | 做法 | `/api/parse` 表现 |
+|---|---|---|
+| 不接模型（默认） | `AI_MODULE_ENABLED=false` | `ai_enabled=false`，`mode=rule_baseline` |
+| 计划内纯规则 | `model_config.json` 的 `active` 设为 `rule` | `ai_enabled=true`、`source=rule`，可拿到 8 个结构化字段 |
+| 模型不可用时 | 保持 `AI_MODULE_ENABLED=true` 但不启动 8010 | 预检失败，`fallback_event.trigger=llm_preflight_unreachable`，业务字段由规则兜底 |
+
+没有 `transformers`/`torch` 环境时只影响模型通道：预检失败即降级，业务链路不中断，接口不会因此变慢（预检 0.4 秒上限）。
 
 Compose 模式（需要 Docker 运行）：
 
@@ -87,25 +112,28 @@ cd frontend; npm.cmd run build
 
 `scripts/smoke.py` 与 `scripts/verify_system.py` 的区别：前者自起自停临时服务、可用作提交前门禁；后者校验**标准端口上真实运行的整套服务**，包含 README 的六个演示步骤，适合联调与验收现场。
 
-## 六、D1 实测结果
+## 六、实测结果（D1 基线 + D2 集成）
 
-在 Windows 11 + Python 3.14.7 + Node 26.8.1 上执行，结果为合并周勃 D1 后端提交后的状态。
+在 Windows 11 + Python 3.14.7 + Node 26.8.1 上执行，结果为合并各成员 D2 提交、并接入 ai-module 适配层后的状态。
 
 | 项目 | 结果 |
 |---|---|
 | `scripts/setup.ps1` 等价步骤（venv + 后端依赖、`npm ci`） | 通过，无漏洞报告 |
-| `pytest backend/tests` | 47 项全部通过 |
+| `pytest backend/tests` | 57 项全部通过（含 AI 适配层 9 项） |
 | `scripts/smoke.py` | 通过：真实 HTTP、唯一任务编号、按编号查询、任务与凭证持久化、提交幂等、预算样例与不扣减、自动初审、审批续跑、预算拒绝、指标 |
 | `npm run build` | 通过，产物 `dist/`（js 88.55 kB、css 12.57 kB） |
 | 本地三服务启动 | 通过：8000/8001 健康检查 200，5173 首页 200 且 `/api` 代理到 8000 |
-| `scripts/verify_system.py` | 36 项断言全部通过（六个演示步骤 + 校验、权限、幂等、指标、工具鉴权） |
+| `scripts/verify_system.py` | 43 项断言全部通过（六个演示步骤 + 校验、权限、幂等、指标、工具鉴权、任务编号贯穿、AI 开关状态） |
+| 启用 `AI_MODULE_ENABLED=true` 的 `/api/parse` | 通过：结构化报销单提取全 8 字段（`source=rule`），`差旅→交通费` 映射生效；模型服务未启动时 `fallback_event.trigger=llm_preflight_unreachable` 且业务字段仍由规则兜底 |
 | Docker Compose | 未验证：当前环境无 Docker，PostgreSQL 链路需在有 Docker 的机器上补测 |
+| 本地模型通道（8010） | 未验证：开发机无 `transformers`/`torch`，该通道仅验证了降级路径 |
 
 ## 七、已知问题与常见故障
 
-- 端口被占用：先确认没有残留进程；本地固定使用 8000、8001、5173。
+- 端口被占用：先确认没有残留进程；本地固定使用 8000、8001、5173、8010。
 - SQLite 单进程限制：不要同时起两个业务后端指向同一个 `tasks.db`，写操作会互相干扰。
 - `backend/data/` 与 `frontend/node_modules/`、`frontend/dist/`、`work/` 均不入库；换机器后必须重新执行依赖准备。
 - 数据重置：删除 `backend/data/tasks.db`、`backend/data/finance.db` 后重启；Compose 见 `docs/DATA-DESIGN.md` 第七节。
 - 任务跨账号、跨角色变化不会自动刷新，需要点击“刷新”；轮询或推送不在 D1 范围。
 - Compose 首次启动较慢，`db`、`finance` 均带健康检查，后端会等待其就绪；若失败先看 `docker compose logs finance`。
+- 启用模型通道后若 `/api/parse` 明显变慢，先确认 8010 是否真的在监听；远程通道的超时由 `ai-module/model_config.json` 的 `timeout_seconds` 控制，演示环境建议保持 `AI_MODULE_ENABLED=false`。

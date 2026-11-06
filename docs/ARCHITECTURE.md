@@ -33,9 +33,20 @@ flowchart LR
 
 ## 认知层现状与接入边界
 
-当前 `backend/app/ai.py` 是 13 行规则基线：用正则从说明中取唯一金额与唯一类别，返回 `mode=rule_baseline`、`requires_confirmation=true`，识别不到就返回 `None` 而不猜。`knowledge.py` 按类别返回 `data/rules.json` 的 5 条模拟条款（`DEMO-01` 至 `DEMO-05`）。
+认知层由两部分组成：`knowledge.py` 按类别返回 `data/rules.json` 的 5 条模拟条款（`DEMO-01` 至 `DEMO-05`），负责“依据”；`ai.py` 负责“字段理解”，并已按 D2 要求接入 `ai-module`。
 
-`ai-module/` 已具备真实模型调用、字段级仲裁、三层降级和 16 条带编号与版本的制度库，但尚未接入业务后端。接入时必须保持现有响应字段不变（`mode`、`suggested_amount`、`suggested_category`、`requires_confirmation`、`message`），并按需追加条款编号、来源、版本与降级标识；模型不可用时回落到规则基线，前端无需改动。这条边界是 D2 的集成前置条件，避免认知层输出格式变更波及员工端与审批台。
+`backend/app/ai.py` 现为**适配层**，职责固定为四项，业务判定仍不在此处：
+
+| 职责 | 实现 |
+|---|---|
+| 启用开关 | 环境变量 `AI_MODULE_ENABLED`（默认关闭，关闭时走内置规则基线，行为与 D1 完全一致） |
+| 可达性预检 | 本地模型通道先做 0.4 秒端口预检，失败即改用纯规则配置 `backend/app/data/ai_rule_only.json`，避免按模型通道 120 秒超时阻塞 `/api/parse` |
+| 枚举与格式映射 | AI 侧 `expense_type`（差旅/办公用品/加班餐补/业务招待）映射到业务类别（交通费/办公用品/其他）；金额统一为两位小数字符串 |
+| 契约与降级留痕 | 保持 `mode`、`suggested_amount`、`suggested_category`、`requires_confirmation`、`message` 五个既有字段不变，追加 `ai_enabled`、`source`、`model`、`fields`、`missing_fields`、`patched_fields`、`violations`、`fallback_event` |
+
+降级链与 `ai-module` 的三层防线对齐：L1 解析容错与 L2 字段级仲裁在其内部完成；L3 整体降级时适配层追加 `fallback_event.trigger`（`llm_preflight_unreachable`、`ai_config_unreadable`、`ai_module_unavailable`），并把业务侧规则基线作为自由文本的兜底来源——`ai-module` 的规则路径以键值对为主，自由文本（如“交通费320元”）提取不到业务字段，兜底后降级体验不会低于未接入。
+
+已知边界：本地模型通道需要 `transformers`/`torch` 环境（`scripts/dev.ps1 ai` 启动，端口 8010），当前开发机未安装，因此实际运行以 `source=rule` 的规则路径与降级路径为准；远程通道（deepseek）的超时由 `ai-module/model_config.json` 控制，启用前须确认该值可接受。制度检索替换（条款级检索）仍在 D3 之后。
 
 ## 数据模型
 
@@ -44,8 +55,8 @@ flowchart LR
 ## 集成验证
 
 - `scripts/smoke.py`：自起自停临时服务与临时库，验证真实 HTTP 链路、唯一任务编号与按编号查询、任务及凭证持久化、提交幂等、预算样例与不扣减、审批续跑、预算拒绝与指标，可作为提交前门禁。
-- `scripts/verify_system.py`：对标准端口上真实运行的服务执行 README 六个演示步骤及校验、权限、幂等、指标、工具鉴权共 36 项断言。
-- `pytest backend/tests`：流程、权限、边界、异常与幂等，当前 47 项；前端以 `npm run build` 保证类型检查与构建通过。
+- `scripts/verify_system.py`：对标准端口上真实运行的服务执行 README 六个演示步骤，以及校验、权限、幂等、指标、工具鉴权、任务编号贯穿与 AI 开关状态共 43 项断言。
+- `pytest backend/tests`：流程、权限、边界、异常、幂等与 AI 适配层，当前 57 项；前端以 `npm run build` 保证类型检查与构建通过。
 
 ## 待开发事项
 

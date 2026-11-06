@@ -48,15 +48,32 @@
 
 `decision`为approve或reject。`comment`1–500字符且不可为空；无制度依据且通过时，`manual_basis`不可为空（最长1000字符）。拒绝后只写回拒绝记录，不执行通过分支。
 
-字段提取请求（`ParseInput`）为 `{"description":"..."}`，1–500字符。响应契约：
+字段提取请求（`ParseInput`）为 `{"description":"..."}`，1–500字符。
+
+基础响应契约（无论是否启用模型都保证存在）：
 
 | 字段 | 说明 |
 |---|---|
-| `mode` | 当前固定 `rule_baseline`，接入模型后用于区分来源 |
-| `suggested_amount` | 唯一可识别的金额，识别不到为 `null` |
-| `suggested_category` | 唯一可识别的类别，识别不到为 `null` |
+| `mode` | `rule_baseline` 或 `llm`：当前建议的实际来源通道 |
+| `suggested_amount` | 唯一可识别的金额，两位小数字符串，识别不到为 `null` |
+| `suggested_category` | 唯一可识别的业务类别，识别不到为 `null` |
 | `requires_confirmation` | 固定 `true`：建议只是建议，必须由用户确认后提交 |
-| `message` | 面向用户的提示，说明当前为规则基线 |
+| `message` | 面向用户的提示，说明当前来源或降级情况 |
+
+启用模型通道（`AI_MODULE_ENABLED=true`）时追加字段：
+
+| 字段 | 说明 |
+|---|---|
+| `ai_enabled` | 模型通道是否启用；`false` 表示走内置规则基线 |
+| `source` | `llm` 或 `rule`：本次字段来自模型还是 ai-module 的规则提取 |
+| `model` | 实际使用的模型名，规则路径为 `null` |
+| `fields` | 结构化字段：`submitter`、`department`、`expense_type`、`amount`、`expense_date`、`invoice_no`、`invoice_title`、`description` |
+| `missing_fields` | 未提取到的必需字段列表，缺失即须走补件，不得编造 |
+| `patched_fields` | 被规则补齐的字段（字段级仲裁发生） |
+| `violations` | 被值校验剔除的字段及原因，供审计留痕 |
+| `fallback_event` | 整体降级事件：`trigger` 取 `llm_preflight_unreachable`、`ai_config_unreadable`、`ai_module_unavailable` 或 ai-module 自身的降级原因，`fallback_to` 为 `rule_baseline` |
+
+模型侧 `expense_type` 枚举（差旅/办公用品/加班餐补/业务招待）由适配层映射为业务类别（交通费/办公用品/其他），映射关系待产品组确认。降级时业务字段仍由业务侧规则兜底，`suggested_amount` 与 `suggested_category` 不会因为模型不可用而丢失。
 
 ## 任务对象响应字段
 

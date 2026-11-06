@@ -21,6 +21,7 @@
 - 本地模式使用SQLite，不要求安装PostgreSQL或启动Docker。
 - Compose模式需要Docker Engine / Docker Desktop正在运行，业务库使用PostgreSQL。
 - 首次安装依赖及拉取镜像需要网络。
+- 字段提取默认使用规则基线；需要接入 ai-module 的模型通道时，按 `docs/DEPLOYMENT.md` 第四节启动 8010 端口并设置 `AI_MODULE_ENABLED=true`，模型不可用会自动降级。
 
 ## 本地启动 Linux / macOS
 
