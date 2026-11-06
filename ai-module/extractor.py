@@ -15,10 +15,13 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import math
 import re
 import urllib.error
 import urllib.request
+from datetime import date
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # ---------------------------------------------------------------------------
 # 字段契约（输出 JSON Schema 的简化声明，LLM prompt 与规则提取共用）
@@ -40,6 +43,9 @@ REQUIRED_FIELDS = ["submitter", "department", "expense_type", "amount",
 
 COMPANY_TITLE = "北京中兴协力科技有限公司"  # 发票合规校验用（INV-001）
 
+# AI 侧费用类型枚举（业务枚举"交通费/办公用品/其他"的映射属适配层职责，D3）
+VALID_EXPENSE_TYPES = {"差旅", "加班餐补", "办公用品", "业务招待"}
+
 
 class ExtractionResult(dict):
     """提取结果：fields / missing_fields / source / fallback_event。"""
@@ -60,10 +66,12 @@ _TYPE_RULES = [
 ]
 
 _AMOUNT_RE = re.compile(
+    # 负号单独捕获（PRD AC13：-50 不得变正，提取层忠实保留负值）；
     # 分支1：带千分位逗号的形式（逗号组至少一次，防止无逗号金额在此分支
-    # 匹配前3位后成功返回，导致 1500 被截断为 150）；
-    # 分支2：无逗号纯数字，由后一分支完整匹配。
-    r"(?:¥|￥|人民币)?\s*([1-9]\d{0,2}(?:,\d{3})+(?:\.\d{1,2})?|[1-9]\d*(?:\.\d{1,2})?)\s*(?:元|块)?"
+    #   匹配前3位后成功返回，导致 1500 被截断为 150）；
+    # 分支2：无逗号纯数字，完整匹配；
+    # 分支3：0 及 0.xx（PRD AC13：0.50 不得识别成 50，忠实保留以便值校验判定）。
+    r"(?:¥|￥|人民币)?\s*(-)?\s*([1-9]\d{0,2}(?:,\d{3})+(?:\.\d{1,2})?|[1-9]\d*(?:\.\d{1,2})?|0(?:\.\d{1,2})?)\s*(?:元|块)?"
 )
 _DATE_RE = re.compile(r"(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})日?")
 _INVOICE_NO_RE = re.compile(r"(\d{8,20})")
@@ -75,9 +83,11 @@ def _norm_amount(raw: str) -> float | None:
     if not m:
         return None
     try:
-        return round(float(m.group(1).replace(",", "")), 2)
+        magnitude = float(m.group(2).replace(",", ""))
     except ValueError:
         return None
+    value = round(magnitude, 2)
+    return -value if m.group(1) else value
 
 
 def _norm_date(raw: str) -> str | None:
@@ -285,7 +295,9 @@ def merge_with_rule(llm_fields: dict, text: str) -> tuple[dict, list]:
     rule_fields = RuleExtractor().extract(text)["fields"]
     patched = []
     for f in REQUIRED_FIELDS:
-        leaked = merged.get(f) == _EXAMPLE_SENTINELS.get(f)
+        # 仅当字段存在且等于哨兵值才算泄漏（防止值校验剔除后的 None 与
+        # 无哨兵字段的 None 误判相等）
+        leaked = f in _EXAMPLE_SENTINELS and merged.get(f) == _EXAMPLE_SENTINELS[f]
         if not merged.get(f) or leaked:
             if rule_fields.get(f):
                 merged[f] = rule_fields[f]
@@ -295,6 +307,69 @@ def merge_with_rule(llm_fields: dict, text: str) -> tuple[dict, list]:
                 # 避免示例哨兵值或幻觉值被误作为真实数据传递至下游。
                 merged.pop(f)
     return merged, patched
+
+
+def validate_field_values(fields: dict) -> tuple[dict, list]:
+    """值校验（PRD FR03/F03/F04）：非法值不得视为正确提取。
+
+    检查项：
+      - amount：布尔 / 非数值 / 非有限数 / 非正数(≤0) / 超过两位小数
+      - expense_date：非法日期 / 晚于 Asia/Shanghai 当天
+      - expense_type：未知类别（不在 AI 侧枚举内）
+
+    返回 (剔除非法字段后的字段集, 违规记录列表)。
+    违规记录 {"field", "reason", "value"} 保留原值供审计留痕（FR03）。
+    """
+    sanitized = dict(fields)
+    violations = []
+
+    def reject(field: str, reason: str, value) -> None:
+        violations.append({"field": field, "reason": reason, "value": value})
+        sanitized.pop(field, None)
+
+    amount = sanitized.get("amount")
+    if amount is not None:
+        if isinstance(amount, bool):
+            reject("amount", "amount_not_boolean", amount)
+        elif not isinstance(amount, (int, float)):
+            reject("amount", "amount_not_numeric", amount)
+        elif not math.isfinite(amount):
+            reject("amount", "amount_not_finite", amount)
+        elif amount <= 0:
+            reject("amount", "amount_not_positive", amount)
+        elif round(float(amount), 2) != amount:
+            reject("amount", "amount_precision", amount)
+
+    d = sanitized.get("expense_date")
+    if d is not None:
+        try:
+            parsed = date.fromisoformat(d) if isinstance(d, str) else None
+            if parsed is None:
+                raise ValueError
+            today_cn = _dt.datetime.now(ZoneInfo("Asia/Shanghai")).date()
+            if parsed > today_cn:
+                reject("expense_date", "expense_date_future", d)
+        except ValueError:
+            reject("expense_date", "expense_date_invalid", d)
+
+    et = sanitized.get("expense_type")
+    if et is not None and et not in VALID_EXPENSE_TYPES:
+        reject("expense_type", "expense_type_unknown", et)
+
+    return sanitized, violations
+
+
+def arbitrate(llm_fields: dict, text: str) -> tuple[dict, list, list]:
+    """两遍式仲裁（PRD FR03"非法字段置为待确认或按规则补齐"）：
+
+    第一遍：校验 LLM 字段，剔除非法值（防非法值被规则盲补覆盖判断）；
+    补齐：缺失/泄漏字段由规则结果补齐；
+    第二遍：对补齐后的终值再校验（规则来自原文，原文本身非法时终值为空+留痕）。
+    """
+    sanitized, v1 = validate_field_values(llm_fields)
+    merged, patched = merge_with_rule(sanitized, text)
+    final, v2 = validate_field_values(merged)
+    return final, patched, v1 + v2
 
 
 # ---------------------------------------------------------------------------
@@ -314,8 +389,8 @@ def extract(text: str, config_path: str | Path = "model_config.json") -> Extract
         llm = LLMExtractor(config)
         try:
             result = llm.extract(text)
-            # 字段级仲裁：泄漏/缺失的个别字段用规则结果补齐，整输出保留
-            merged, patched = merge_with_rule(result["fields"], text)
+            # 两遍式仲裁：值校验 → 规则补齐 → 终值再校验（见 arbitrate 文档）
+            merged, patched, violations = arbitrate(result["fields"], text)
             missing = [f for f in REQUIRED_FIELDS if not merged.get(f)]
             return ExtractionResult(
                 fields=merged,
@@ -324,6 +399,7 @@ def extract(text: str, config_path: str | Path = "model_config.json") -> Extract
                 model=config.get("model"),
                 fallback_event=None,
                 patched_fields=patched,
+                violations=violations,
             )
         except ExtractorError as e:
             fallback_event = {
@@ -341,11 +417,14 @@ def extract(text: str, config_path: str | Path = "model_config.json") -> Extract
             }
 
     rule_result = RuleExtractor().extract(text)
+    sanitized, violations = validate_field_values(rule_result["fields"])
+    missing = [f for f in REQUIRED_FIELDS if not sanitized.get(f)]
     return ExtractionResult(
-        fields=rule_result["fields"],
-        missing_fields=rule_result["missing_fields"],
+        fields=sanitized,
+        missing_fields=missing,
         source=source,
         model=None,
         fallback_event=fallback_event,
         patched_fields=None,
+        violations=violations,
     )

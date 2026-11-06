@@ -14,7 +14,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from extractor import (LLMExtractor, RuleExtractor, ExtractorError, extract,
-                       load_config, merge_with_rule)
+                       load_config, merge_with_rule, validate_field_values,
+                       arbitrate)
 
 ROOT = Path(__file__).parent
 SLIP1 = """报销单
@@ -74,6 +75,67 @@ def test_rule_amount_plain_digits_without_comma():
                       ("12,000元", 12000.0), ("1,234,567.89", 1234567.89)]:
         got = RuleExtractor().extract(f"金额：{raw}")["fields"].get("amount")
         assert got == want, f"{raw} → {got}, 期望 {want}"
+
+
+def test_rule_amount_decimal_below_one_and_negative():
+    """回归（PRD FR02/AC13）：0.50 不得识别成 50；-50 不得变正。
+
+    提取层忠实提取（0.50→0.5、-50→-50.0），合法性由值校验层判定。
+    """
+    got = RuleExtractor().extract("金额：0.50元")["fields"].get("amount")
+    assert got == 0.5, f"0.50元 → {got}，期望 0.5"
+    got = RuleExtractor().extract("金额：-50元")["fields"].get("amount")
+    assert got == -50.0, f"-50元 → {got}，期望 -50.0"
+
+
+# ---- 值校验（PRD FR03/F03/F04/AC12：非法值不得视为正确提取） ---------------
+
+def test_validate_field_values_rejects_illegal_values():
+    """七类非法值：字段剔除 + 违规记录；合法值不受影响。"""
+    cases = [
+        ({"amount": True}, "amount", "amount_not_boolean"),
+        ({"amount": -50}, "amount", "amount_not_positive"),
+        ({"amount": 0}, "amount", "amount_not_positive"),
+        ({"amount": 1.001}, "amount", "amount_precision"),
+        ({"amount": "abc"}, "amount", "amount_not_numeric"),
+        ({"expense_date": "2026-13-45"}, "expense_date", "expense_date_invalid"),
+        ({"expense_date": "2099-01-01"}, "expense_date", "expense_date_future"),
+        ({"expense_type": "娱乐"}, "expense_type", "expense_type_unknown"),
+    ]
+    for fields, field, reason in cases:
+        sanitized, violations = validate_field_values(fields)
+        assert field not in sanitized, f"{fields} 的 {field} 应被剔除"
+        assert any(v["field"] == field and v["reason"] == reason for v in violations), \
+            f"{fields} 应记录 {reason}，实际 {violations}"
+
+
+def test_validate_field_values_keeps_legal_values():
+    from datetime import date, timedelta
+    today_cn = date.today().isoformat()  # 测试环境为东八区，与生产时区一致即可覆盖语义
+    sanitized, violations = validate_field_values({
+        "amount": 300.0, "expense_type": "差旅",
+        "expense_date": today_cn, "submitter": "张伟"})
+    assert sanitized["amount"] == 300.0
+    assert sanitized["expense_type"] == "差旅"
+    assert sanitized["expense_date"] == today_cn
+    assert violations == []
+
+
+def test_extract_rule_path_flags_violations():
+    """规则路径：-50 提取忠实保留，但终值不得为正——值为空+违规留痕（AC13）。"""
+    cfg = _tmp_config({"enabled": False})
+    r = extract("报销单\n提交人：张伟\n金额：-50元\n事由：测试", cfg)
+    assert r["fields"].get("amount") is None, "-50 不得以任何数值形态通过"
+    assert any(v["reason"] == "amount_not_positive" for v in r["violations"])
+
+
+def test_arbitrate_patches_invalid_llm_value_from_rule():
+    """LLM 给了非法金额(-50) → 剔除后由规则从原文补齐 300（两遍式仲裁）。"""
+    llm_fields = {"amount": -50, "submitter": "张伟"}
+    fields, patched, violations = arbitrate(llm_fields, "报销单\n金额：300元")
+    assert fields["amount"] == 300.0
+    assert "amount" in patched
+    assert any(v["reason"] == "amount_not_positive" for v in violations)
 
 
 def test_rule_cn_date_format():
