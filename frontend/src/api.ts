@@ -1,11 +1,95 @@
-export interface User { username: string; name: string; role: string }
-export interface Claim { project_id: string; category: string; amount: string; expense_date: string; description: string; confirmed: boolean }
-export interface Task { id: string; owner: string; status: string; payload: Claim; result: Record<string, unknown>; citations: Array<{id:string;text:string;source:string;version:string}>; logs: unknown[]; events: Array<{at:string;status:string;message:string}>; approvals: unknown[]; created_at: string }
+export type UserRole = 'employee' | 'approver' | 'admin'
+export type TaskStatus = 'queued' | 'running' | 'awaiting_approval' | 'writing_back' | 'succeeded' | 'rejected' | 'failed'
+export type ClaimCategory = '交通费' | '办公用品' | '其他'
+
+export interface User { username: string; name: string; role: UserRole }
+export interface Claim {
+  project_id: 'P001' | 'P002'
+  category: ClaimCategory
+  amount: string
+  expense_date: string
+  description: string
+  confirmed: true
+}
+export interface ParseSuggestion {
+  mode: string
+  suggested_amount: string | null
+  suggested_category: ClaimCategory | null
+  requires_confirmation: true
+  message: string
+}
+export interface Citation { id: string; text: string; source: string; version: string }
+export interface TaskEvent { at: string; status: TaskStatus; message: string }
+export interface ToolLog { at: string; tool: string; method: string; request: unknown; success: boolean; response?: unknown; error?: string; duration_ms: number }
+export interface Approval { at: string; actor: string; decision: 'approve' | 'reject'; comment: string; manual_basis: string }
+export interface TaskResult {
+  decision?: 'approved' | 'rejected'
+  reason?: string
+  mode?: string
+  error?: string
+  budget?: { project_id: string; available: string; currency: string; simulated: boolean }
+  receipt?: { task_id: string; decision: string; reason: string; receipt_id: string; simulated: boolean }
+}
+export interface Task {
+  id: string
+  owner: string
+  status: TaskStatus
+  payload: Claim
+  result: TaskResult
+  citations: Citation[]
+  logs: ToolLog[]
+  events: TaskEvent[]
+  approvals: Approval[]
+  created_at: string
+  finished_at: string | null
+  manual: boolean
+}
+
 let credentials = ''
 export function setCredentials(username: string, password: string) { credentials = btoa(`${username}:${password}`) }
+
+function validationMessage(detail: unknown): string {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    const messages = detail.map(item => {
+      if (!item || typeof item !== 'object') return ''
+      const issue = item as { loc?: Array<string | number>; msg?: string }
+      const field = issue.loc?.filter(part => part !== 'body').join('.')
+      return [field, issue.msg].filter(Boolean).join('：')
+    }).filter(Boolean)
+    if (messages.length) return messages.join('；')
+  }
+  return '请求未能完成，请检查输入后重试'
+}
+
+function statusMessage(status: number, detail: unknown): string {
+  const message = validationMessage(detail)
+  if (status === 401) return '账号或密码错误，请重新登录'
+  if (status === 403) return `当前账号没有执行此操作的权限：${message}`
+  if (status === 404) return message === '请求未能完成，请检查输入后重试' ? '请求的数据不存在或不可见' : message
+  if (status === 409) return `任务状态已变化，请刷新后重试：${message}`
+  if (status === 422) return `提交内容不符合要求：${message}`
+  if (status >= 500) return '业务服务暂时不可用，请稍后重试；已填写内容不会丢失'
+  return message
+}
+
 export async function request<T>(path: string, method = 'GET', body?: unknown, key?: string): Promise<T> {
-  const response = await fetch('/api' + path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + credentials, ...(key ? {'Idempotency-Key':key} : {}) }, ...(body === undefined ? {} : {body: JSON.stringify(body)}) })
-  const data = await response.json()
-  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail || data))
+  let response: Response
+  try {
+    response = await fetch('/api' + path, {
+      method,
+      headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + credentials, ...(key ? { 'Idempotency-Key': key } : {}) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) })
+    })
+  } catch {
+    throw new Error('无法连接业务服务，请确认后端已启动后重试；已填写内容不会丢失')
+  }
+  const text = await response.text()
+  let data: unknown = null
+  if (text) { try { data = JSON.parse(text) } catch { data = null } }
+  if (!response.ok) {
+    const detail = data && typeof data === 'object' && 'detail' in data ? (data as { detail: unknown }).detail : data
+    throw new Error(statusMessage(response.status, detail))
+  }
   return data as T
 }
