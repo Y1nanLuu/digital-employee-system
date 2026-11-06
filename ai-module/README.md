@@ -42,7 +42,7 @@ python demo.py             # 真实模型调用 + 字段仲裁 + 降级演示
 ## 目录
 
 ```
-knowledge_base/   制度文档 3 篇 16 条（条款ID+版本，可追溯引用的依据）
+knowledge_base/   实验性制度文档 3 篇 16 条（已按 PRD FR04 隔离，不参与正式判断；首版生效制度为 backend/app/data/rules.json demo-v1，见 knowledge_base/ISOLATED.md）
 samples/          模拟报销单样例 5 张
 llm_server.py     本地 LLM 服务：HF 缓存模型 → OpenAI 兼容接口（CPU 推理，端口 8010）
 extractor.py      字段提取：LLM 适配层 + 规则提取 + 字段级仲裁/整体降级
