@@ -54,7 +54,7 @@ def test_enabled_rule_channel_returns_structured_fields(config):
 
 def test_category_mapping_covers_all_ai_types(config):
     config({'active': 'rule'})
-    assert ai.CATEGORY_MAP == {'差旅': '交通费', '办公用品': '办公用品', '加班餐补': '其他', '业务招待': '其他'}
+    assert ai.CATEGORY_MAP == {'差旅': '其他', '办公用品': '办公用品', '加班餐补': '其他', '业务招待': '其他'}
     result = ai.parse_fields('费用类型：业务招待\n金额：800\n事由：宴请客户')
     assert result['fields']['expense_type'] == '业务招待'
     assert result['suggested_category'] == '其他'
@@ -86,7 +86,7 @@ def test_unreachable_provider_degrades_without_raising(config):
             'timeout_seconds': 120})
     result = ai.parse_fields(SLIP)
     assert result['ai_enabled'] is True
-    assert result['mode'] == 'rule_baseline'
+    assert result['mode'] == 'rule_fallback'
     assert result['fallback_event']['trigger'] == 'llm_preflight_unreachable'
     assert result['suggested_amount'] == '320.00'  # 仍能给出字段，只是来源为规则
 
@@ -96,7 +96,7 @@ def test_unreadable_config_degrades(config):
     result = ai.parse_fields(SLIP)
     assert result['ai_enabled'] is True
     assert result['fallback_event']['trigger'].startswith('ai_config_unreadable')
-    assert result['mode'] == 'rule_baseline'
+    assert result['mode'] == 'rule_fallback'
 
 
 def test_missing_config_file_degrades(monkeypatch, tmp_path):
@@ -104,16 +104,26 @@ def test_missing_config_file_degrades(monkeypatch, tmp_path):
     monkeypatch.setenv('AI_MODULE_CONFIG', str(tmp_path / 'not-exists.json'))
     result = ai.parse_fields(SLIP)
     assert result['fallback_event']['trigger'].startswith('ai_config_unreadable')
-    assert result['message'] == ai.MESSAGE_RULE
+    assert result['message'] == ai.MESSAGE_DEGRADED
 
 
 def test_baseline_never_guesses():
     # 多条金额或未识别类别时保持 None，不猜测
     result = ai.baseline_fields('交通费300元，另有餐饮100元')
     assert result['suggested_amount'] is None
-    assert result['suggested_category'] == '交通费'
+    assert result['suggested_category'] == '其他'
 
 
 def test_rule_only_config_file_is_valid():
     data = json.loads(ai.RULE_ONLY_CONFIG.read_text(encoding='utf-8'))
     assert data == {'active': 'rule'}
+
+
+@pytest.mark.parametrize('content', [[], {'active': 'rule', 'timeout_seconds': 121},
+                                    {'active': 'local', 'providers': {'local': ['invalid']}}])
+def test_invalid_config_still_produces_visible_manual_fallback(config, content):
+    config(content)
+    result = ai.parse_fields('交通费300元')
+    assert result['mode'] == 'rule_fallback'
+    assert result['requires_manual_review'] is True
+    assert result['fallback_event']

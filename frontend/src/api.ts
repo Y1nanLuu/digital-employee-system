@@ -10,8 +10,11 @@ export interface Claim {
   expense_date: string
   description: string
   confirmed: true
+  parse_id?: string
+  conflict_acknowledged?: boolean
+  confirmation_note?: string
 }
-export interface ParseSuggestion {
+export interface ParseSuggestion extends ParseSnapshot {
   mode: string
   suggested_amount: string | null
   suggested_category: ClaimCategory | null
@@ -21,12 +24,14 @@ export interface ParseSuggestion {
 export interface Citation { id: string; text: string; source: string; version: string }
 export interface TaskEvent { at: string; status: TaskStatus; message: string }
 export interface ToolLog { at: string; tool: string; method: string; request: unknown; success: boolean; response?: unknown; error?: string; duration_ms: number }
-export interface Approval { at: string; actor: string; decision: 'approve' | 'reject'; comment: string; manual_basis: string }
+export interface Approval { reviewed_fields?: boolean; corrected_fields?: CorrectedFields | null; correction_reason?: string; at: string; actor: string; decision: 'approve' | 'reject'; comment: string; manual_basis: string }
 export interface TaskResult {
   decision?: 'approved' | 'rejected'
   reason?: string
   mode?: string
   error?: string
+  error_code?: string
+  manual_reasons?: string[]
   budget?: { project_id: string; available: string; currency: string; simulated: boolean }
   receipt?: { task_id: string; decision: string; reason: string; receipt_id: string; simulated: boolean }
 }
@@ -43,10 +48,19 @@ export interface Task {
   created_at: string
   finished_at: string | null
   manual: boolean
+  submission_payload: Claim
+  parse_snapshot: ParseSnapshot
+  confirmations: unknown[]
+  amendments: unknown[]
+  failure_stage: string | null
 }
 
 let credentials = ''
 export function setCredentials(username: string, password: string) { credentials = btoa(`${username}:${password}`) }
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) { super(message); this.name = 'ApiError' }
+}
 
 function validationMessage(detail: unknown): string {
   if (typeof detail === 'string') return detail
@@ -73,11 +87,11 @@ function statusMessage(status: number, detail: unknown): string {
   return message
 }
 
-export async function request<T>(path: string, method = 'GET', body?: unknown, key?: string): Promise<T> {
+export async function request<T>(path: string, method = 'GET', body?: unknown, key?: string, signal?: AbortSignal): Promise<T> {
   let response: Response
   try {
     response = await fetch('/api' + path, {
-      method,
+      method, signal,
       headers: { 'Content-Type': 'application/json', Authorization: 'Basic ' + credentials, ...(key ? { 'Idempotency-Key': key } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) })
     })
@@ -89,7 +103,27 @@ export async function request<T>(path: string, method = 'GET', body?: unknown, k
   if (text) { try { data = JSON.parse(text) } catch { data = null } }
   if (!response.ok) {
     const detail = data && typeof data === 'object' && 'detail' in data ? (data as { detail: unknown }).detail : data
-    throw new Error(statusMessage(response.status, detail))
+    throw new ApiError(statusMessage(response.status, detail), response.status)
   }
   return data as T
+}
+
+export interface AmountCandidate { raw: string; amount: string | null; valid: boolean; reason?: string }
+export interface FieldConflict { field: string; reason: string }
+export interface ParseSnapshot {
+  mode: string
+  parse_id?: string
+  requires_manual_review: boolean
+  fallback_event?: unknown
+  amount_candidates?: AmountCandidate[]
+  conflicts?: FieldConflict[]
+}
+export type CorrectedFields = Partial<Pick<Claim, 'project_id' | 'category' | 'amount' | 'expense_date' | 'description'>>
+export interface ApprovalRequest {
+  decision: 'approve' | 'reject'
+  comment: string
+  manual_basis?: string
+  corrected_fields?: CorrectedFields
+  correction_reason?: string
+  reviewed_fields?: boolean
 }

@@ -137,3 +137,25 @@ cd frontend; npm.cmd run build
 - 任务跨账号、跨角色变化不会自动刷新，需要点击“刷新”；轮询或推送不在 D1 范围。
 - Compose 首次启动较慢，`db`、`finance` 均带健康检查，后端会等待其就绪；若失败先看 `docker compose logs finance`。
 - 启用模型通道后若 `/api/parse` 明显变慢，先确认 8010 是否真的在监听；远程通道的超时由 `ai-module/model_config.json` 的 `timeout_seconds` 控制，演示环境建议保持 `AI_MODULE_ENABLED=false`。
+
+
+## D2数据库升级与故障处置
+
+日常升级保留原数据，停止旧业务进程后启动新业务服务即可执行幂等追加升级。SQLite旧表升级前会在原目录生成备份。不要用删除数据库代替升级；测试数据重置仅限隔离演示环境。
+
+写回超时或进程中断时先查任务的`failure_stage`、`result.decision`及日志，核对模拟财务原记录。停止业务进程，保留财务服务运行，以具备该数据库访问权限的受控运维身份，在项目根目录执行：
+
+```bash
+# 财务已写入但业务尚未确认：只读取并重放已有pending_writeback，不接受新决定或新载荷。
+.venv/bin/python scripts/recover_task.py TASK_UUID --action replay-writeback --actor admin --reason "已核对原财务记录，按原载荷重放"
+# 仅初审或预算查询阶段失败、无任何待写回载荷时，恢复同一任务。
+.venv/bin/python scripts/recover_task.py TASK_UUID --action retry-budget --actor admin --reason "预算服务恢复，确认尚无写回"
+```
+
+Windows将解释器替换为`.\.venv\Scripts\python.exe`。自定义数据库或财务地址时，给脚本设置与业务服务相同的`DATABASE_URL`、`FINANCE_URL`、`FINANCE_KEY`；默认数据库相对于backend目录。命令成功后重新启动业务服务。
+
+`--actor`用于审计留痕，实际访问控制依赖受控服务器和数据库权限；该脚本没有对员工或审批人开放HTTP入口。恢复操作记录操作者、原因、状态及工具调用；终态拒绝恢复。内容冲突返回失败并保留原检查点，须人工对账，禁止另建编号规避冲突。
+
+`smoke.py`使用临时数据库验证解析关联、字段补正、补正后原请求重放、业务中断标记和恢复CLI，运行后自动停止进程。生产数据库及密钥不应作为测试输入。
+
+可选浏览器检查见`scripts/browser_smoke.mjs`，需要单独安装测试驱动并设置浏览器路径；使用随机端口、临时数据库，自起自停服务。截图与日志存放在被Git忽略的work目录。

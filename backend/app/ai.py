@@ -8,11 +8,11 @@ fields/missing_fields/source/model/patched_fields/fallback_event/violations。
 """
 import json
 import os
-import re
 import socket
 import sys
 from pathlib import Path
 from urllib.parse import urlsplit
+from .validation import amount_candidates, category_for, money_value
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 AI_MODULE_DIR = REPO_ROOT / 'ai-module'
@@ -22,26 +22,32 @@ RULE_ONLY_CONFIG = Path(__file__).parent / 'data' / 'ai_rule_only.json'
 
 # AI 侧费用类型 → 业务侧类别（业务枚举仅 交通费/办公用品/其他，映射关系待产品组确认）
 CATEGORY_MAP = {
-    '差旅': '交通费',
+    '差旅': '其他',
     '办公用品': '办公用品',
     '加班餐补': '其他',
     '业务招待': '其他',
 }
 _TRUE = {'1', 'true', 'yes', 'on'}
 
-MESSAGE_RULE = '规则提取建议，请核对字段后再提交。复杂语义解析和LLM接入待开发。'
+MESSAGE_RULE = '规则提取建议，请核对金额、类别与日期后再提交。'
 MESSAGE_LLM = '模型提取建议，请核对金额、类别与日期后再提交。'
-MESSAGE_DEGRADED = '模型不可用，已降级为规则提取，请核对字段后再提交。'
+MESSAGE_DEGRADED = '模型不可用，已降级为规则提取；请核对字段，提交后将转人工复核。'
 
 
 def baseline_fields(description):
     """可运行的规则基线，不冒充LLM。扩展模型能力放在 ai-module，响应契约保持不变。"""
-    amounts = sorted(set(re.findall(r'(\d+(?:\.\d{1,2})?)\s*元', description)))
-    categories = [c for c in ['交通费', '办公用品'] if c in description]
+    candidates = amount_candidates(description)
+    amount = candidates[0]['amount'] if len(candidates) == 1 and candidates[0]['valid'] else None
+    conflicts = []
+    if len(candidates) > 1 or any(not item['valid'] for item in candidates):
+        conflicts.append({'field': 'amount', 'reason': '存在多个或不合法金额，请明确核对申报值'})
     return {
         'mode': 'rule_baseline',
-        'suggested_amount': amounts[0] if len(amounts) == 1 else None,
-        'suggested_category': categories[0] if len(categories) == 1 else None,
+        'suggested_amount': amount,
+        'suggested_category': category_for(description),
+        'amount_candidates': candidates,
+        'conflicts': conflicts,
+        'requires_manual_review': False,
         'requires_confirmation': True,
         'message': MESSAGE_RULE,
     }
@@ -57,6 +63,8 @@ def _provider_reachable(config, timeout=0.4):
     if not isinstance(providers, dict):
         return True
     provider = providers.get(config.get('active')) or {}
+    if not isinstance(provider, dict):
+        raise ValueError('模型通道配置格式不合法')
     parts = urlsplit(str(provider.get('base_url', '')))
     if parts.scheme == 'https':
         return True
@@ -69,36 +77,53 @@ def _provider_reachable(config, timeout=0.4):
 
 
 def _degraded(baseline, trigger):
-    return {**baseline, 'ai_enabled': True,
+    return {**baseline, 'ai_enabled': True, 'mode': 'rule_fallback',
+            'requires_manual_review': True, 'message': MESSAGE_DEGRADED,
             'fallback_event': {'trigger': trigger, 'fallback_to': 'rule_baseline'}}
 
 
-def _adapt(baseline, result, preflight_trigger):
-    fields = result.get('fields') or {}
+def _adapt(baseline, result, preflight_trigger, description=''):
+    if not isinstance(result, dict) or not isinstance(result.get('fields'), dict):
+        return _degraded(baseline, 'ai_output_invalid')
+    fields = dict(result['fields'])
     amount = fields.get('amount')
     # 金额一律以两位小数字符串对外，避免前端与业务端出现浮点比较
-    suggested_amount = f'{amount:.2f}' if isinstance(amount, (int, float)) and not isinstance(amount, bool) else None
+    violations = list(result.get('violations') or [])
+    suggested_amount = None
+    if amount is not None:
+        try:
+            if isinstance(amount, bool):
+                raise ValueError('金额不能为布尔值')
+            suggested_amount = format(money_value(str(amount)), '.2f')
+        except ValueError:
+            fields['amount'] = None
+            violations.append({'field': 'amount', 'reason': '模型金额取值或精度不合法'})
     expense_type = fields.get('expense_type')
+    if expense_type is not None and (not isinstance(expense_type, str) or expense_type not in CATEGORY_MAP):
+        violations.append({'field': 'expense_type', 'reason': '模型费用类别不合法'})
+        expense_type = None
     source = result.get('source') or 'rule'
     fallback_event = result.get('fallback_event')
     if preflight_trigger and not fallback_event:
         fallback_event = {'trigger': preflight_trigger, 'fallback_to': 'rule_baseline'}
-    if source == 'llm':
-        message, mode = MESSAGE_LLM, 'llm'
-    elif fallback_event:
-        message, mode = MESSAGE_DEGRADED, 'rule_baseline'
+    if fallback_event:
+        message, mode = MESSAGE_DEGRADED, 'rule_fallback'
+    elif source == 'llm':
+        message, mode = MESSAGE_LLM, 'llm_with_rule_patch' if result.get('patched_fields') else 'llm'
     else:
         message, mode = MESSAGE_RULE, 'rule_baseline'
 
     # 规则路径以键值对为主，自由文本（如“交通费320元”）提取不到业务字段。
     # 此时用业务侧规则兜底，保证降级后不比未接入更差。
-    suggested_category = CATEGORY_MAP.get(expense_type) if expense_type else None
+    suggested_category = category_for(description, expense_type)
     if suggested_amount is None:
         fallback_amount = baseline.get('suggested_amount')
         if fallback_amount:
-            suggested_amount = f'{float(fallback_amount):.2f}'
+            suggested_amount = fallback_amount
     if suggested_category is None:
         suggested_category = baseline.get('suggested_category')
+    if source == 'llm' and not fallback_event and violations:
+        mode = 'llm_with_rule_patch'
 
     return {
         **baseline,
@@ -111,7 +136,9 @@ def _adapt(baseline, result, preflight_trigger):
         'fields': fields,
         'missing_fields': result.get('missing_fields') or [],
         'patched_fields': result.get('patched_fields'),
-        'violations': result.get('violations') or [],
+        'violations': violations,
+        'requires_manual_review': bool(fallback_event or violations),
+        'mapping_reason': '按具体交通、住宿或混合用途映射；无法确定的差旅归为其他',
         'fallback_event': fallback_event,
         'message': message,
     }
@@ -126,20 +153,28 @@ def parse_fields(description: str):
     config_path = Path(os.getenv('AI_MODULE_CONFIG') or DEFAULT_CONFIG)
     try:
         config = json.loads(config_path.read_text(encoding='utf-8'))
+        if not isinstance(config, dict):
+            raise ValueError('模型配置须为对象')
+        timeout = config.get('timeout_seconds', 120)
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not 0 < timeout <= 120:
+            raise ValueError('模型超时须大于0且不超过120秒')
     except (OSError, ValueError) as exc:
         return _degraded(baseline, f'ai_config_unreadable:{type(exc).__name__}')
 
     preflight_trigger = None
     effective = config_path
-    if not _provider_reachable(config):
-        preflight_trigger = 'llm_preflight_unreachable'
-        effective = RULE_ONLY_CONFIG
+    try:
+        if not _provider_reachable(config):
+            preflight_trigger = 'llm_preflight_unreachable'
+            effective = RULE_ONLY_CONFIG
+    except (TypeError, ValueError):
+        return _degraded(baseline, 'ai_config_invalid')
 
     try:
         if str(AI_MODULE_DIR) not in sys.path:
             sys.path.insert(0, str(AI_MODULE_DIR))
         from extractor import extract as ai_extract
         result = ai_extract(description, effective)
+        return _adapt(baseline, result, preflight_trigger, description)
     except Exception as exc:  # ai-module 缺失或接口变动时不得影响业务链路
         return _degraded(baseline, f'ai_module_unavailable:{type(exc).__name__}')
-    return _adapt(baseline, result, preflight_trigger)

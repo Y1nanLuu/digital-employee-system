@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -59,7 +60,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
     env={**os.environ,'DATABASE_URL':'sqlite:///'+(temp/'tasks.db').as_posix(),
          'FINANCE_DATABASE_URL':'sqlite:///'+(temp/'finance.db').as_posix(),
          'FINANCE_URL':finance_url,
-         'FINANCE_KEY':'local-finance-key','DEMO_PASSWORD':'demo123','PYTHONIOENCODING':'utf-8'}
+         'FINANCE_KEY':'local-finance-key','DEMO_PASSWORD':'demo123','AI_MODULE_ENABLED':'false','PYTHONIOENCODING':'utf-8'}
     processes=[]
     with (ROOT/'work/smoke-services.log').open('w',encoding='utf8') as log:
         def launch(module,selected_port):
@@ -78,6 +79,8 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
             body={'project_id':'P001','category':'交通费','amount':'300.00',
                   'expense_date':datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat(),
                   'description':'客户现场往返交通费300元','confirmed':True}
+            parsed=call(backend_url,'/api/parse',{'description':body['description']})
+            body={**body,'parse_id':parsed['parse_id']}
             key=str(uuid4())
             automatic=call(backend_url,'/api/tasks',body,key=key)
             assert automatic['status']=='succeeded'
@@ -85,13 +88,16 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
             assert call(backend_url,'/api/tasks/'+automatic['id'])==automatic
             assert len(automatic['logs'])==2
             assert call(backend_url,'/api/tasks',body,key=key)==automatic
-            pending=call(backend_url,'/api/tasks',{**body,'amount':'1500'},key=str(uuid4()))
+            pending_body={**body,'amount':'1500','description':'客户现场办公用品1500元','category':'办公用品'}
+            pending_body.pop('parse_id')
+            pending_key=str(uuid4())
+            pending=call(backend_url,'/api/tasks',pending_body,key=pending_key)
             assert pending['id']!=automatic['id']
             assert pending['status']=='awaiting_approval'
             stop(backend)
             stop(finance)
             launch('finance.main:app',finance_port)
-            launch('app.main:app',backend_port)
+            backend=launch('app.main:app',backend_port)
             assert call(backend_url,'/api/tasks/'+automatic['id'])==automatic
             assert call(backend_url,'/api/tasks',body,key=key)==automatic
             receipt=automatic['result']['receipt']
@@ -99,14 +105,46 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
             assert call(finance_url,'/results',result_body,bearer=env['FINANCE_KEY'])==receipt
             restored=call(backend_url,'/api/tasks/'+pending['id'],role='approver')
             assert restored['status']=='awaiting_approval'
-            done=call(backend_url,'/api/tasks/'+pending['id']+'/approval',{'decision':'approve','comment':'重启后人工核验通过'},role='approver')
+            done=call(backend_url,'/api/tasks/'+pending['id']+'/approval',{'decision':'approve','comment':'重启后人工核验通过','corrected_fields':{'amount':'900.00'},'correction_reason':'核对后扣除个人承担部分','reviewed_fields':True},role='approver')
             assert done['status']=='succeeded' and len(done['logs'])==3
-            rejected=call(backend_url,'/api/tasks',{**body,'project_id':'P002','amount':'600'},key=str(uuid4()))
+            assert done['payload']['amount']=='900.00'
+            assert done['submission_payload']['amount']=='1500.00'
+            assert call(backend_url,'/api/tasks',pending_body,key=pending_key)==done
+            rejected_body={**body,'project_id':'P002','amount':'600','description':'客户现场往返交通费600元'}
+            rejected_body.pop('parse_id')
+            rejected=call(backend_url,'/api/tasks',rejected_body,key=str(uuid4()))
             assert rejected['status']=='rejected'
             assert call(finance_url,'/budgets/P001',bearer=env['FINANCE_KEY'])['available']=='10000.00'
+            # 财务已存在原凭证，模拟业务进程未能确认写回时中断。
+            stop(backend)
+            interrupted_result={key:value for key,value in automatic['result'].items() if key!='receipt'}
+            interrupted_result['execution_stage']='writeback'
+            with sqlite3.connect(temp/'tasks.db') as connection:
+                connection.execute('UPDATE tasks SET status=?, result=?, pending_writeback=?, finished_at=NULL WHERE id=?',
+                                   ('writing_back',json.dumps(interrupted_result),json.dumps(result_body),automatic['id']))
+            backend=launch('app.main:app',backend_port)
+            interrupted=call(backend_url,'/api/tasks/'+automatic['id'])
+            assert interrupted['status']=='failed' and interrupted['result']['error_code']=='process_interrupted'
+            stop(backend)
+            recovered=subprocess.run([sys.executable,str(ROOT/'scripts/recover_task.py'),automatic['id'],
+                                      '--action','replay-writeback','--actor','smoke-admin','--reason','按原编号对账'],
+                                     cwd=ROOT,env=env,capture_output=True,text=True,check=True)
+            recovery_task=json.loads(recovered.stdout)
+            assert recovery_task['status']=='succeeded' and recovery_task['result']['receipt']==receipt
+            with sqlite3.connect(temp/'finance.db') as connection:
+                assert connection.execute('SELECT COUNT(*) FROM receipts').fetchone()[0]==3
+            backend=launch('app.main:app',backend_port)
+            assert call(backend_url,'/api/tasks/'+automatic['id'])==recovery_task
             metrics=call(backend_url,'/api/metrics',role='admin')
             assert metrics['total']==3 and metrics['completed']==3
+            verified=subprocess.run([sys.executable,str(ROOT/'scripts/verify_system.py')],
+                                    cwd=ROOT,env={**env,'BACKEND_URL':backend_url},
+                                    capture_output=True,text=True)
+            if verified.returncode:
+                raise RuntimeError(verified.stdout[-4000:] + verified.stderr[-1000:])
+            print('PASS: integrated service verification — ' + verified.stdout.strip().splitlines()[-1])
             print('PASS: real HTTP, unique task IDs, task lookup, persisted tasks and receipts, submit idempotency after process restart')
+            print('PASS: parse snapshots, atomic amendments, initial-request replay, interrupted writeback detection and CLI reconciliation')
             print('PASS: budget samples, no budget deduction, automatic review, approval resume, budget rejection, metrics')
         finally:
             for process in reversed(processes): stop(process)
