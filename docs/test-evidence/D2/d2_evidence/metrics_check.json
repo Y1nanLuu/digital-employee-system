@@ -1,0 +1,18 @@
+{
+  "pass": true,
+  "metrics": {
+    "total": 22,
+    "completed": 20,
+    "completion_rate": 0.9090909090909091,
+    "manual_rate": 0.45454545454545453,
+    "average_processing_seconds": 0.053835600000000025,
+    "average_end_to_end_seconds": 1.0953219
+  },
+  "calculated": {
+    "total": 22,
+    "completed": 20,
+    "completion_rate": 0.9090909090909091,
+    "manual_rate": 0.45454545454545453,
+    "average_end_to_end_seconds": 1.0953218999999998
+  }
+}

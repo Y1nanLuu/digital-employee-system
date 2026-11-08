@@ -1,0 +1,30 @@
+{
+  "tasks": [
+    [
+      "3d0e5f8a-2440-41ca-b1f3-840efc347e4d",
+      "succeeded",
+      0
+    ],
+    [
+      "054d9262-259d-46ec-8908-734eed34cf0c",
+      "succeeded",
+      1
+    ],
+    [
+      "cb2f9581-2cb1-4a02-8c96-4b1fbd4199e2",
+      "rejected",
+      0
+    ]
+  ],
+  "receipts": [
+    [
+      "3d0e5f8a-2440-41ca-b1f3-840efc347e4d"
+    ],
+    [
+      "054d9262-259d-46ec-8908-734eed34cf0c"
+    ],
+    [
+      "cb2f9581-2cb1-4a02-8c96-4b1fbd4199e2"
+    ]
+  ]
+}

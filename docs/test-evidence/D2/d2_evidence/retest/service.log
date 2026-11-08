@@ -1,0 +1,21 @@
+INFO:     Started server process [25448]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:61909 (Press CTRL+C to quit)
+INFO:     127.0.0.1:61916 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61923 - "GET /budgets/P001 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61924 - "POST /results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61927 - "GET /budgets/P002 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61928 - "POST /results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61930 - "GET /budgets/P001 HTTP/1.1" 200 OK
+ 200 OK
+INFO:     127.0.0.1:61922 - "POST /api/tasks HTTP/1.1" 201 Created
+INFO:     127.0.0.1:61925 - "POST /api/tasks HTTP/1.1" 201 Created
+INFO:     127.0.0.1:61929 - "POST /api/tasks HTTP/1.1" 201 Created
+INFO:     127.0.0.1:61931 - "POST /api/tasks HTTP/1.1" 201 Created
+INFO:     127.0.0.1:61939 - "GET /api/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61946 - "POST /api/tasks/0c4eed2c-90f7-4f4e-8799-238e476cdde2/approval HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61947 - "POST /api/tasks/0c4eed2c-90f7-4f4e-8799-238e476cdde2/approval HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:61950 - "GET /api/tasks/0c4eed2c-90f7-4f4e-8799-238e476cdde2 HTTP/1.1" 200 OK
+OK
+INFO:     127.0.0.1:61949 - "POST /results HTTP/1.1" 200 OK
