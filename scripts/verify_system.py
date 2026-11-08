@@ -10,6 +10,7 @@
 """
 import base64
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -17,10 +18,11 @@ from datetime import datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
-BACKEND = 'http://127.0.0.1:8000'
-FINANCE = 'http://127.0.0.1:8001'
-PASSWORD = 'demo123'
-FINANCE_KEY = 'local-finance-key'
+BACKEND = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+FINANCE = os.getenv('FINANCE_URL', 'http://127.0.0.1:8001')
+PASSWORD = os.getenv('DEMO_PASSWORD', 'demo123')
+FINANCE_KEY = os.getenv('FINANCE_KEY', 'local-finance-key')
+LOCAL_HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 results = []
 
 
@@ -35,7 +37,7 @@ def call(base, path, body=None, role='employee', key=None, headers=None, method=
     if key:
         hdrs['Idempotency-Key'] = key
     request = urllib.request.Request(base + path, data=data, headers=hdrs, method=method)
-    with urllib.request.urlopen(request, timeout=15) as response:
+    with LOCAL_HTTP.open(request, timeout=15) as response:
         return response.status, json.load(response)
 
 
@@ -77,11 +79,11 @@ expect('场景1 响应未暴露 request_key(契约缺口)', 'request_key' not in
 
 # 2. 超过1000元进入人工审批，审批通过后续跑
 key2 = str(uuid4())
-code, t2 = call(BACKEND, '/api/tasks', {**base_body, 'category': '办公用品', 'amount': '1500'},
+code, t2 = call(BACKEND, '/api/tasks', {**base_body, 'category': '办公用品', 'amount': '1500', 'description': '客户现场采购办公用品1500元'},
                 key=key2)
 expect('场景2 办公用品1500 进入待审批', t2['status'] == 'awaiting_approval', t2['status'])
 expect('场景2 幂等重放无重复任务',
-       call(BACKEND, '/api/tasks', {**base_body, 'category': '办公用品', 'amount': '1500'}, key=key2)[1]['id'] == t2['id'])
+       call(BACKEND, '/api/tasks', {**base_body, 'category': '办公用品', 'amount': '1500', 'description': '客户现场采购办公用品1500元'}, key=key2)[1]['id'] == t2['id'])
 expect('场景2 员工账号不能审批(403)', status_of(BACKEND, f"/api/tasks/{t2['id']}/approval",
        {'decision': 'approve', 'comment': '越权尝试'}, role='employee') == 403)
 code, t2a = call(BACKEND, f"/api/tasks/{t2['id']}/approval", {'decision': 'approve', 'comment': '用途明确，同意初审'},
@@ -92,18 +94,18 @@ expect('场景2 重复审批返回409', status_of(BACKEND, f"/api/tasks/{t2['id'
        {'decision': 'approve', 'comment': '重复'}, role='approver') == 409)
 
 # 3. 审批拒绝后终止
-code, t3 = call(BACKEND, '/api/tasks', {**base_body, 'category': '办公用品', 'amount': '1500'}, key=str(uuid4()))
+code, t3 = call(BACKEND, '/api/tasks', {**base_body, 'category': '办公用品', 'amount': '1500', 'description': '客户现场采购办公用品1500元'}, key=str(uuid4()))
 code, t3a = call(BACKEND, f"/api/tasks/{t3['id']}/approval", {'decision': 'reject', 'comment': '超标准，材料不全'},
                  role='approver')
 expect('场景3 审批拒绝后状态 rejected', t3a['status'] == 'rejected', t3a['status'])
 expect('场景3 拒绝也写回凭证', t3a['result'].get('receipt', {}).get('decision') == 'rejected', t3a['result'].get('receipt'))
 
 # 4. 预算不足
-code, t4 = call(BACKEND, '/api/tasks', {**base_body, 'project_id': 'P002', 'amount': '600'}, key=str(uuid4()))
+code, t4 = call(BACKEND, '/api/tasks', {**base_body, 'project_id': 'P002', 'amount': '600', 'description': '客户现场交通费600元'}, key=str(uuid4()))
 expect('场景4 P002 600 预算不足被拒', t4['status'] == 'rejected' and '预算' in t4['result'].get('reason', ''), t4['status'])
 
 # 5. 其他类别无制度依据转人工，须补人工依据
-code, t5 = call(BACKEND, '/api/tasks', {**base_body, 'category': '其他'}, key=str(uuid4()))
+code, t5 = call(BACKEND, '/api/tasks', {**base_body, 'category': '其他', 'description': '专项其他费用300元'}, key=str(uuid4()))
 expect('场景5 其他类别转人工', t5['status'] == 'awaiting_approval' and not t5['citations'], t5['status'])
 expect('场景5 无依据通过且未填人工依据返回422',
        status_of(BACKEND, f"/api/tasks/{t5['id']}/approval", {'decision': 'approve', 'comment': '同意'}, role='approver') == 422)
@@ -147,7 +149,7 @@ code, parsed = call(BACKEND, '/api/parse', {'description': '上周出差上海�
 expect('/api/parse 返回基础契约', all(k in parsed for k in
        ['mode', 'suggested_amount', 'suggested_category', 'requires_confirmation', 'message']), parsed)
 expect('/api/parse 金额为320', str(parsed.get('suggested_amount')).startswith('320'), parsed.get('suggested_amount'))
-expect('/api/parse 未识别类别时返回 None 而非编造', parsed.get('suggested_category') is None, parsed)
+expect('/api/parse 按明确高铁用途映射交通费', parsed.get('suggested_category') == '交通费', parsed)
 expect('/api/parse 暴露 ai_enabled 开关状态', isinstance(parsed.get('ai_enabled'), bool), parsed.get('ai_enabled'))
 if parsed.get('ai_enabled'):
     expect('/api/parse 启用AI时返回来源与结构化字段',

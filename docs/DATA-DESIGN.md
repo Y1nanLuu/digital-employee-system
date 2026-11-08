@@ -49,7 +49,7 @@
 
 金额为十进制字符串，禁止二进制浮点；`confirmed` 固定为 `true`。
 
-`result`（键按执行阶段增量合并）：`decision`（`approved`/`rejected`）、`reason`、`mode`（当前固定 `rule_baseline`）、`budget`（财务服务返回的预算快照）、`receipt`（写回凭证）、`error`（技术失败信息）。失败任务保留 `error` 且不覆盖已有结论。
+`result`（键按执行阶段增量合并）：`decision`（`approved`/`rejected`）、`reason`、`mode`（按实际输入来源保存，详见API契约）、`budget`（财务服务返回的预算快照）、`receipt`（写回凭证）、`error`（技术失败信息）。失败任务保留 `error` 且不覆盖已有结论。
 
 `citations`：`id`、`text`、`source`、`version`。人工补充依据记为 `id=MANUAL`、`source=审批人用户名`、`version=审批时间`，与制度条款同结构，保证表述一致。
 
@@ -92,7 +92,7 @@ queued → running → failed                （外部工具调用失败）
 
 ## 五、建表与迁移
 
-- 当前使用 `Base.metadata.create_all(engine)`，在服务启动时建表，无版本化迁移。
+- 服务启动先运行`app.migrations.initialize_database`：建新表、检查并增量补齐D2字段、回填初始快照。当前使用幂等升级脚本，尚未引入Alembic。
 - D1 决定：字段未冻结前不引入迁移框架，避免每天改动都产生迁移脚本与团队额外成本。
 - 触发条件：D4 功能冻结后若还有结构变更，引入 Alembic，并把 `create_all` 换成 `alembic upgrade head`。改动前须先写迁移说明，禁止直接改已有表结构。
 - SQLite 到 PostgreSQL 的差异：`JSON` 在 SQLite 存文本，在 PostgreSQL 存 `jsonb`；`String` 长度约束在 SQLite 不强制。开发与联调须至少在 PostgreSQL 上跑一次（Compose 路径），避免只在 SQLite 上验证。
@@ -121,3 +121,16 @@ Compose 模式使用命名卷，重置需 `docker compose down` 后删除 `postg
 | 任务列表分页 | 任务数超过百条 | 现在全量返回，`created_at` 降序 |
 | 迁移脚本 | D4 结构冻结 | 见第五节 |
 | 中断恢复与对账 | D3 执行可靠性任务 | 依据 `logs` + `receipts` 判定副作用是否已发生 |
+
+
+## D2增量数据升级（2026-11-08）
+
+新增`parse_snapshots`表：id、owner、description_hash（SHA-256）、snapshot、created_at。编号按当前身份及去首尾空白后的说明绑定；不设置短期失效，不保存认证信息。
+
+`tasks`增加JSON字段`submission_payload`、`parse_snapshot`、`confirmations`、`amendments`、`pending_writeback`，以及可空VARCHAR(40)字段`failure_stage`。初始请求不可被补正改写；当前payload与变更审计原子提交。待写回载荷先于外部副作用持久化，且不对外暴露。
+
+升级是追加式：通过检查列存在性避免重复ALTER，新字段为对象/列表的空默认值。旧记录回填规范化初始请求，原payload表示完整保存在`confirmations.original_payload`中；旧数据只标注legacy_backfill，不推断不存在的模型调用证据。已有任务编号、状态、幂等键、日志和凭证不删除。再次启动不重复回填。
+
+SQLite旧表升级前自动生成同目录`*.before-d2-<UTC时间>.bak`备份；测试验证了历史记录保留和重复升级。PostgreSQL使用相同的JSON/VARCHAR追加DDL，实际联调仍须在可访问的PostgreSQL环境执行。
+
+审批事务先取得行锁并完成全部输入/依据校验，再一次性提交补正、审批记录和running状态；随后的外部预算查询与写回采用明确检查点，不长时间持有审批行锁。其他审批者在锁释放后读到非待审批状态，返回409。SQLite仍限制单业务进程。
