@@ -88,6 +88,36 @@ def test_rule_amount_decimal_below_one_and_negative():
     assert got == -50.0, f"-50元 → {got}，期望 -50.0"
 
 
+def test_rule_amount_zero_is_faithfully_extracted():
+    """回归（评测发现）：0 是合法提取值，不得被 if value 的假值判断丢弃。
+
+    丢弃会导致 0 元既不进字段也不触发 amount_not_positive 违规标记。
+    """
+    got = RuleExtractor().extract("金额：0元")["fields"].get("amount")
+    assert got == 0.0, f"0元 → {got}，期望忠实提取为 0.0"
+
+
+def test_rule_amount_extra_decimals_not_truncated():
+    """回归（评测发现）：三位以上小数不得截断为两位后静默通过。
+
+    1.001 曾被正则截成 1.00 且四舍五入销毁证据，值校验无从拦截；
+    应完整提取 1.001，由值校验层标记 amount_precision。
+    """
+    got = RuleExtractor().extract("金额：1.001元")["fields"].get("amount")
+    assert got == 1.001, f"1.001元 → {got}，期望完整提取 1.001"
+
+
+def test_extract_flags_zero_and_precision_violations():
+    """端到端：0 元与三位小数经值校验后置空并留违规记录。"""
+    cfg = _tmp_config({"enabled": False})
+    r = extract("报销单\n费用类型：差旅\n金额：0元\n事由：测试", cfg)
+    assert r["fields"].get("amount") is None
+    assert any(v["reason"] == "amount_not_positive" for v in r["violations"])
+    r = extract("报销单\n费用类型：差旅\n金额：1.001元\n事由：测试", cfg)
+    assert r["fields"].get("amount") is None
+    assert any(v["reason"] == "amount_precision" for v in r["violations"])
+
+
 # ---- 值校验（PRD FR03/F03/F04/AC12：非法值不得视为正确提取） ---------------
 
 def test_validate_field_values_rejects_illegal_values():
