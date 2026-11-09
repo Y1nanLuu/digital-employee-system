@@ -1,0 +1,23 @@
+
+> digital-employee-web@0.1.0 build
+> vue-tsc --noEmit && vite build
+
+X [ERROR] Cannot read directory "../../../../../../../..": Access is denied.
+
+X [ERROR] Could not resolve "C:\\Users\\Sara\\Documents\\Codex\\2026-11-07\\ni\\work\\repo-src\\digital-employee-system-master\\frontend\\vite.config.ts"
+
+failed to load config from C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\vite.config.ts
+error during build:
+Error: Build failed with 2 errors:
+error: Cannot read directory "../../../../../../../..": Access is denied.
+error: Could not resolve "C:\\Users\\Sara\\Documents\\Codex\\2026-11-07\\ni\\work\\repo-src\\digital-employee-system-master\\frontend\\vite.config.ts"
+    at failureErrorWithLog (C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:1752:15)
+    at C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:1211:25
+    at runOnEndCallbacks (C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:1592:45)
+    at buildResponseToResult (C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:1209:7)
+    at C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:1236:16
+    at responseCallbacks.<computed> (C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:886:9)
+    at handleIncomingPacket (C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:941:12)
+    at Socket.readFromStdout (C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-src\digital-employee-system-master\frontend\node_modules\esbuild\lib\main.js:864:7)
+    at Socket.emit (node:events:508:28)
+    at addChunk (node:internal/streams/readable:559:12)

@@ -1,0 +1,62 @@
+{
+  "empty_metrics": {
+    "total": 0,
+    "completed": 0,
+    "completion_rate": null,
+    "manual_rate": null,
+    "average_processing_seconds": null,
+    "average_end_to_end_seconds": null
+  },
+  "tasks_before_metrics": {
+    "auto": "succeeded",
+    "rejected": "rejected",
+    "pending": "awaiting_approval",
+    "failed": "failed"
+  },
+  "failed_logs": [
+    {
+      "at": "2026-11-08T10:18:34.859450+00:00",
+      "tool": "/budgets/P001",
+      "method": "GET",
+      "request": null,
+      "success": false,
+      "error": "ConnectError",
+      "duration_ms": 2076.47
+    }
+  ],
+  "fixed_metrics": {
+    "total": 4,
+    "completed": 2,
+    "completion_rate": 0.5,
+    "manual_rate": 0.25,
+    "average_processing_seconds": 0.0939645,
+    "average_end_to_end_seconds": 0.0939645
+  },
+  "concurrent_approval": [
+    200,
+    409
+  ],
+  "final_pending": "succeeded",
+  "db_tasks": [
+    [
+      "92144971-d73f-45d9-97b6-c4dd0aa53ff3",
+      "succeeded",
+      0
+    ],
+    [
+      "b151cdf3-e1e5-4b0b-bacc-e8d43446adc9",
+      "rejected",
+      0
+    ],
+    [
+      "0c4eed2c-90f7-4f4e-8799-238e476cdde2",
+      "succeeded",
+      1
+    ],
+    [
+      "491b6ba0-2f3c-436a-8a5e-5d2201a7b9cb",
+      "failed",
+      0
+    ]
+  ]
+}

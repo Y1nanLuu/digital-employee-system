@@ -1,0 +1,32 @@
+{
+  "invalid": [
+    {
+      "amount": -50,
+      "status": 422,
+      "body": "{\"detail\":[{\"type\":\"greater_than\",\"loc\":[\"body\",\"amount\"],\"msg\":\"Input should be greater than 0\",\"input\":-50,\"ctx\":{\"gt\":0}}]}"
+    },
+    {
+      "amount": 1.001,
+      "status": 422,
+      "body": "{\"detail\":[{\"type\":\"decimal_max_places\",\"loc\":[\"body\",\"amount\"],\"msg\":\"Decimal input should have no more than 2 decimal places\",\"input\":1.001,\"ctx\":{\"decimal_places\":2}}]}"
+    },
+    {
+      "amount": true,
+      "status": 422,
+      "body": "{\"detail\":[{\"type\":\"decimal_type\",\"loc\":[\"body\",\"amount\"],\"msg\":\"Decimal input should be an integer, float, string or Decimal object\",\"input\":true}]}"
+    },
+    {
+      "amount": "1e3",
+      "status": 201,
+      "body": "{\"id\":\"4b506748-e64b-487a-abbf-224fe1bfb200\",\"owner\":\"employee\",\"status\":\"succeeded\",\"payload\":{\"project_id\":\"P001\",\"category\":\"交通费\",\"amount\":\"1E+3\",\"expense_date\":\"2026-11-08\",\"description\":\"D2金额校验-非法值测试\",\"confirmed\":true},\"result\":{\"budget\":{\"project_id\":\"P001\",\"available\":\"10000.00\",\"currency\":\"CNY\",\"simulated\":true},\"decision\":\"approved\",\"reason\":\"金额、制度和预算校验通过\",\"mode\":\"rule_baseline\",\"receipt\":{\"task_id\":\"4b506748-e64b-487a-abbf-224fe1bfb200\",\"decision\":\"approved\",\"reason\":\"金额、制度和预算校验通过\",\"receipt_id\":\"demo-4b506748-e64b-487a-abbf-224fe1bfb200\",\"simulated\":true}},\"citations\":[{\"id\":\"DEMO-01\",\"text\":\"受理金额大于0且不超过5000元、信息完整的报销申请。\",\"source\":\"模拟费用报销制度\",\"version\":\"demo-v1\"},{\"id\":\"DEMO-02\",\"text\":\"交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。\",\"source\":\"模拟费用报销制度\",\"version\":\"demo-v1\"},{\"id\":\"DEMO-03\",\"text\":\"金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。\",\"source\":\"模拟费用报销制度\",\"version\":\"demo-v1\"},{\"id\":\"DEMO-04\",\"text\":\"申请金额不得超过项目可用预算。\",\"source\":\"模拟费用报销制度\",\"version\":\"demo-v1\"},{\"id\":\"DEMO-05\",\"text\":\"审批记录操作者、时间、意见和结果，提交人不得审批本人任务。\",\"source\":\"模拟费用报销制度\",\"version\":\"demo-v1\"}],\"logs\":[{\"at\":\"2026-11-08T10:16:24.308006+00:00\",\"tool\":\"/budgets/P001\",\"method\":\"GET\",\"request\":null,\"success\":true,\"response\":{\"project_id\":\"P001\",\"available\":\"10000.00\",\"currency\":\"CNY\",\"simulated\":true},\"duration_ms\":23.37},{\"at\":\"2026-11-08T10:16:24.331756+00:00\",\"tool\":\"/results\",\"method\":\"POST\",\"request\":{\"task_id\":\"4b506748-e64b-487a-abbf-224fe1bfb200\",\"decision\":\"approved\",\"reason\":\"金额、制度和预算校验通过\"},\"success\":true,\"response\":{\"task_id\":\"4b506748-e64b-487a-abbf-224fe1bfb200\",\"decision\":\"approved\",\"reason\":\"金额、制度和预算校验通过\",\"receipt_id\":\"demo-4b506748-e64b-487a-abbf-224fe1bfb200\",\"simulated\":true},\"duration_ms\":22.86}],\"events\":[{\"at\":\"2026-11-08T10:16:24.308006+00:00\",\"status\":\"running\",\"message\":\"按模拟制度执行规则基线\"},{\"at\":\"2026-11-08T10:16:24.331756+00:00\",\"status\":\"writing_back\",\"message\":\"写回模拟审核记录，不执行资金支付\"},{\"at\":\"2026-11-08T10:16:24.354163+00:00\",\"status\":\"succeeded\",\"message\":\"金额、制度和预算校验通过\"}],\"approvals\":[],\"created_at\":\"2026-11-08T10:16:24.300988+00:00\",\"finished_at\":\"2026-11-08T10:16:24.354716+00:00\",\"manual\":false}"
+    }
+  ],
+  "invalid_task_delta": 1,
+  "no_decimal": {
+    "status": 201,
+    "id": "96bd4cfd-a661-432e-a0bf-63f1685fffda",
+    "amount": "300"
+  },
+  "admin_approval": 403,
+  "missing_task": 404
+}
