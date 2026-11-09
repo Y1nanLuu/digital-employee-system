@@ -165,6 +165,35 @@ try {
   assert.equal(amended.amendments.length,1)
   console.log('PASS: browser parse linkage, detail loading lock, atomic approval amendment and audit')
 
+  const rejection = await api('/api/tasks', {
+    project_id:'P001', category:'交通费', amount:'1500.00', expense_date:amended.payload.expense_date,
+    description:'客户拜访往返交通费1500元', confirmed:true,
+  }, 'browser-d3-reject')
+  assert.equal(rejection.status, 201)
+  assert.equal(rejection.body.status, 'awaiting_approval')
+  await clickText('刷新')
+  await clickText(rejection.body.id)
+  await page.waitForSelector('.approval')
+  await labelControl('审批意见','票据不全，本次拒绝')
+  await clickText('拒绝初审')
+  await page.waitForFunction(() => document.querySelector('[role=status]')?.textContent.includes('初审拒绝'))
+  const rejected = (await api('/api/tasks/' + rejection.body.id)).body
+  assert.equal(rejected.status, 'rejected')
+  assert.equal(rejected.approvals[0].comment, '票据不全，本次拒绝')
+  assert.equal(rejected.result.receipt.decision, 'rejected')
+  assert.equal(rejected.logs.filter(log => log.tool.startsWith('/budgets/')).length, 1)
+  assert.match(await page.$eval('.timeline', element => element.textContent), /待人工审批[\s\S]*结果写回中[\s\S]*初审拒绝/)
+  await clickText('工作概览')
+  const metrics = await call(backend, '/api/metrics', undefined, {
+    Authorization:'Basic ' + Buffer.from('approver:demo123').toString('base64'),
+  })
+  assert.equal(metrics.status, 200)
+  assert.equal(metrics.body.completion_rate, 1)
+  assert.equal(metrics.body.manual_rate, 2 / 3)
+  const stats = await page.$$eval('.stats strong', elements => elements.map(element => element.textContent.trim()))
+  assert.deepEqual(stats, ['3', '100.0%', '66.7%', metrics.body.average_processing_seconds.toFixed(2) + ' 秒'])
+  console.log('PASS: browser rejection reason, terminal timeline, and three API-backed dashboard metrics')
+
   await clickText('退出'); await login('employee')
   await fillClaim('200','客户现场交通费200元')
   await labelControl('我已核对原始说明',true)
