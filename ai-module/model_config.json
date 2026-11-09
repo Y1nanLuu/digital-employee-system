@@ -9,7 +9,7 @@
     "deepseek": {
       "base_url": "https://api.deepseek.com/v1",
       "api_key": "ENV:DEEPSEEK_API_KEY",
-      "model": "deepseek-chat"
+      "model": "deepseek-flash"
     },
     "glm_flash": {
       "base_url": "https://open.bigmodel.cn/api/coding/paas/v4",
