@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, timezone
+from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 from fastapi import HTTPException
@@ -35,8 +36,11 @@ class ToolFailure(RuntimeError):
 
 def tool(task, method, path, body=None, *, response_model, expected, stage):
     start = time.perf_counter()
+    address = urlsplit(config.FINANCE_URL + path)
+    endpoint = urlunsplit((address.scheme, address.netloc.rsplit('@', 1)[-1], address.path, '', ''))
     record = {'at': now(), 'task_id': task.id, 'stage': stage,
-              'tool': path, 'method': method, 'request': body}
+              'tool': path.split('?', 1)[0].split('#', 1)[0], 'endpoint': endpoint,
+              'method': method, 'request': body}
     try:
         with httpx.Client(timeout=5, trust_env=False) as client:
             response = client.request(method, config.FINANCE_URL + path, json=body,

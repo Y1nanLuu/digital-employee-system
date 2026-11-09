@@ -87,7 +87,7 @@
 | `payload` | 当前有效报销字段，审批补正不覆盖初始快照 |
 | `result` | `decision`、`reason`、`mode`、`budget`、`receipt`、`error` |
 | `citations` | 引用条款：`id`、`text`、`source`、`version`；人工依据记为 `id=MANUAL` |
-| `logs` | 工具调用日志：`task_id`、`stage`、`at`、`tool`、`method`、`request`、`success`、`response`或`error`、`duration_ms` |
+| `logs` | 工具调用日志：`task_id`、`stage`、`at`、`tool`、`endpoint`、`method`、`request`、`success`、`response`或`error`、`error_code`、`duration_ms`；错误码仅失败时出现 |
 | `events` | 状态事件：`at`、`task_id`、`status`、`message`；审批与恢复事件另带`actor`、`reason`，失败事件带`failure_stage`/`error_code` |
 | `approvals` | 审批记录：`at`、`actor`、`decision`、`comment`、`manual_basis`、`corrected_fields`、`correction_reason`、`reviewed_fields`，以及`citations_before`/`citations_after` |
 | `created_at` | 创建时间（UTC ISO） |
@@ -100,6 +100,23 @@
 | `failure_stage` | 技术失败阶段；正常状态为null |
 
 `request_key`、`pending_writeback`、`approval_started_at`、`wait_seconds` 为服务端内部字段，不对外暴露；人工等待时长只用于指标口径。
+
+`endpoint`记录实际工具地址（协议、主机、端口及路径），去除URL账号密码、查询参数及片段；`tool`继续保留路径，兼容旧记录。日志不保存认证请求头，也不直接公开底层连接异常详情。
+
+## 指标口径
+
+`GET /api/metrics`仅供approver/admin查看，按当前数据库的全部真实任务统计，不限于本轮演示：
+
+| 字段 | 计算方式 |
+| --- | --- |
+| `total` | 全部任务数 |
+| `completed` | 状态为succeeded或rejected的任务数；待审批和技术失败均不算完成 |
+| `completion_rate` | completed / total |
+| `manual_rate` | 曾转人工（manual=true）的任务数 / total；审批续跑后仍保留人工历史 |
+| `average_processing_seconds` | 已完成任务的max(0, 结束时间－创建时间－累计人工等待秒数)的平均值 |
+| `average_end_to_end_seconds` | 已完成任务的结束时间－创建时间的平均值，包含人工等待 |
+
+空库的两项计数为0、两项比率为null；没有已完成任务时，两项平均耗时为null。指标校验应与真实任务状态交叉核对，不能假定completed始终等于total。
 
 ## 状态与错误
 
@@ -147,7 +164,7 @@
 
 交互式完整字段契约见运行后的两个服务 `/docs`。改动后按下述顺序核对：`schemas.py` → 本文件 → `frontend/src/api.ts` → `backend/tests` → `scripts/verify_system.py` → `scripts/verify_integration.py`。
 
-联调现场按顺序执行：`scripts/verify_system.py`（标准端口 43 项，六个演示步骤与接口契约）→ `scripts/verify_integration.py`（51 项，状态事件序列、账号权限矩阵、解析快照与冲突、审批补正、指标交叉核对、凭证回溯）→ `scripts/verify_restart.py`（19 项，重启保留与续跑、中断标记与受限恢复）。集成版本与实测结果见 `docs/INTEGRATION.md`。
+联调现场按顺序执行：`scripts/verify_system.py`（标准端口 46 项，六个演示步骤与接口契约，允许历史待审批和失败记录）→ `scripts/verify_integration.py`（51 项，状态事件序列、账号权限矩阵、解析快照与冲突、审批补正、指标交叉核对、凭证回溯）→ `scripts/verify_restart.py`（19 项，重启保留与续跑、中断标记与受限恢复）。集成版本与实测结果见 `docs/INTEGRATION.md`。
 
 
 ## D2/D3：解析关联、冲突确认与补正

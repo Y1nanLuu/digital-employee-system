@@ -137,6 +137,8 @@ cd frontend; npm.cmd run build
 | Docker Compose | 未验证：当前环境无 Docker，PostgreSQL 链路列入 D4 |
 | 本地模型通道（8010） | 未验证：开发机无 `transformers`/`torch`，仅验证降级路径与规则路径 |
 
+2026-11-09周勃后续Linux复核：后端118项、现场脚本46项（含历史数据连续运行）、集成51项、重启恢复19项通过，前端构建和浏览器四组验证通过。上述Windows表格属于原环境记录，Windows编码修复仍需实机复验；本轮已在Linux模拟CP936默认文本解码并通过。详见[集成复核补充](INTEGRATION.md)和[验收证据](test-evidence/D3/zhoubo-20261109-summary.json)。
+
 ## 七、已知问题与常见故障
 
 - 端口被占用：先确认没有残留进程；本地固定使用 8000、8001、5173、8010。
