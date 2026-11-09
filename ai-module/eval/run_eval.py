@@ -15,6 +15,7 @@
 """
 import argparse
 import json
+import os
 import sys
 import tempfile
 import time
@@ -23,6 +24,22 @@ from pathlib import Path
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE.parent))
 from extractor import extract, VALID_EXPENSE_TYPES  # noqa: E402
+
+
+def load_local_keys() -> None:
+    """加载本地密钥文件（已被 .gitignore 忽略）到环境变量。
+
+    文件格式为 KEY=VALUE 每行一条，# 开头为注释。
+    """
+    env_file = HERE / "api_keys.env"
+    if not env_file.exists():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
 
 DEAD_PROVIDER = {"active": "dead", "timeout_seconds": 2,
                  "providers": {"dead": {"base_url": "http://127.0.0.1:9/v1",
@@ -112,7 +129,8 @@ def mode_of(result: dict) -> str:
 
 
 def run(channel: str, cases: list[dict], config_path: Path, limit: int | None) -> dict:
-    raw_path = HERE / "out" / f"raw_{channel}.jsonl"
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    raw_path = HERE / "out" / f"raw_{channel}_{stamp}.jsonl"
     HERE.joinpath("out").mkdir(exist_ok=True)
     # L2 专属用例（no_evidence 组）不在 L1 提取器评测的分母内
     cases = [c for c in cases if c.get("layer", "L1") == "L1"]
@@ -173,12 +191,13 @@ def run(channel: str, cases: list[dict], config_path: Path, limit: int | None) -
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--channel", required=True,
-                    choices=["rule", "local_qwen", "deepseek", "dead"])
+                    choices=["rule", "local_qwen", "deepseek", "glm_flash", "dead"])
     ap.add_argument("--cases", default=str(HERE / "cases.jsonl"))
     ap.add_argument("--config", default=str(HERE.parent / "model_config.json"))
     ap.add_argument("--limit", type=int, default=None)
     args = ap.parse_args()
 
+    load_local_keys()
     cases = load_cases(Path(args.cases))
     config_path = make_config(Path(args.config), args.channel)
     stats = run(args.channel, cases, config_path, args.limit)

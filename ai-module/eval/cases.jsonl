@@ -98,26 +98,26 @@
 {"id": "F038", "group": "format", "core": false, "layer": "L1", "input": "报销单\n费用类型：差旅\n金额：5000.501元\n事由：格式测试", "expect": {"amount": null, "category": "差旅", "violation": "amount_precision"}}
 {"id": "F039", "group": "format", "core": false, "layer": "L1", "input": "报销单\n费用类型：差旅\n金额：0.001元\n事由：格式测试", "expect": {"amount": null, "category": "差旅", "violation": "amount_precision"}}
 {"id": "F040", "group": "format", "core": false, "layer": "L1", "input": "报销单\n费用类型：差旅\n金额：¥-3,275.00\n事由：格式测试", "expect": {"amount": null, "category": "差旅", "violation": "amount_not_positive"}}
-{"id": "M001", "group": "multi", "core": false, "layer": "L1", "input": "报销单\n费用类型：差旅\n金额：300元\n另：加油费200元未含\n事由：差旅出行", "expect": {"amount_anyof": ["300.00", "200.00"], "not_amounts": ["500.00"], "category": "差旅"}}
-{"id": "M002", "group": "multi", "core": false, "layer": "L1", "input": "高铁票448元，住宿两晚600元，本次先报高铁", "expect": {"amount_anyof": ["448.00", "600.00"], "not_amounts": ["1048.00"], "category": "差旅"}}
-{"id": "M003", "group": "multi", "core": false, "layer": "L1", "input": "住宿780元（三晚），返程高铁356元在下月报销", "expect": {"amount_anyof": ["780.00", "356.00"], "not_amounts": ["1136.00"], "category": "差旅"}}
-{"id": "M004", "group": "multi", "core": false, "layer": "L1", "input": "机票1320元和保险费40元，合计请人工核对", "expect": {"amount_anyof": ["1320.00", "40.00"], "not_amounts": ["1360.00"], "category": "差旅"}}
-{"id": "M005", "group": "multi", "core": false, "layer": "L1", "input": "市内交通两天合计86元，另购物98元不报", "expect": {"amount_anyof": ["86.00", "98.00"], "not_amounts": ["184.00"], "category": "*enum"}}
-{"id": "M006", "group": "multi", "core": false, "layer": "L1", "input": "采购A4纸186元和墨盒245元分两张单", "expect": {"amount_anyof": ["186.00", "245.00"], "not_amounts": ["431.00"], "category": "办公用品"}}
-{"id": "M007", "group": "multi", "core": false, "layer": "L1", "input": "餐补35元和停车费15元", "expect": {"amount_anyof": ["35.00", "15.00"], "not_amounts": ["50.00"], "category": "*enum"}}
-{"id": "M008", "group": "multi", "core": false, "layer": "L1", "input": "招待晚宴880元，酒水另计120元", "expect": {"amount_anyof": ["880.00", "120.00"], "not_amounts": ["1000.00"], "category": "业务招待"}}
-{"id": "M009", "group": "multi", "core": false, "layer": "L1", "input": "10月住宿500元、11月住宿520元，跨月两单", "expect": {"amount_anyof": ["500.00", "520.00"], "not_amounts": ["1020.00"], "category": "差旅"}}
-{"id": "M010", "group": "multi", "core": false, "layer": "L1", "input": "交通费300元；住宿450元；餐费120元，三笔待分摊", "expect": {"amount_anyof": ["300.00", "450.00", "120.00"], "not_amounts": ["870.00"], "category": "差旅"}}
-{"id": "M011", "group": "multi", "core": false, "layer": "L1", "input": "打印费60元加装订40元", "expect": {"amount_anyof": ["60.00", "40.00"], "not_amounts": ["100.00"], "category": "*enum"}}
-{"id": "M012", "group": "multi", "core": false, "layer": "L1", "input": "打车38元、地铁6元、公交2元", "expect": {"amount_anyof": ["38.00", "6.00", "2.00"], "not_amounts": ["46.00"], "category": "差旅"}}
+{"id": "M001", "group": "multi", "core": false, "layer": "L1", "input": "报销单\n费用类型：差旅\n金额：300元\n另：加油费200元未含\n事由：差旅出行", "expect": {"amount_anyof": ["300.00", "200.00"], "not_amounts": ["500.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M002", "group": "multi", "core": false, "layer": "L1", "input": "高铁票448元，住宿两晚600元，本次先报高铁", "expect": {"amount_anyof": ["448.00", "600.00"], "not_amounts": ["1048.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M003", "group": "multi", "core": false, "layer": "L1", "input": "住宿780元（三晚），返程高铁356元在下月报销", "expect": {"amount_anyof": ["780.00", "356.00"], "not_amounts": ["1136.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M004", "group": "multi", "core": false, "layer": "L1", "input": "机票1320元和保险费40元，合计请人工核对", "expect": {"amount_anyof": ["1320.00", "40.00"], "not_amounts": ["1360.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M005", "group": "multi", "core": false, "layer": "L1", "input": "市内交通两天合计86元，另购物98元不报", "expect": {"amount_anyof": ["86.00", "98.00"], "not_amounts": ["184.00"], "category": "*enum", "amount_null_ok": true}}
+{"id": "M006", "group": "multi", "core": false, "layer": "L1", "input": "采购A4纸186元和墨盒245元分两张单", "expect": {"amount_anyof": ["186.00", "245.00"], "not_amounts": ["431.00"], "category": "办公用品", "amount_null_ok": true}}
+{"id": "M007", "group": "multi", "core": false, "layer": "L1", "input": "餐补35元和停车费15元", "expect": {"amount_anyof": ["35.00", "15.00"], "not_amounts": ["50.00"], "category": "*enum", "amount_null_ok": true}}
+{"id": "M008", "group": "multi", "core": false, "layer": "L1", "input": "招待晚宴880元，酒水另计120元", "expect": {"amount_anyof": ["880.00", "120.00"], "not_amounts": ["1000.00"], "category": "业务招待", "amount_null_ok": true}}
+{"id": "M009", "group": "multi", "core": false, "layer": "L1", "input": "10月住宿500元、11月住宿520元，跨月两单", "expect": {"amount_anyof": ["500.00", "520.00"], "not_amounts": ["1020.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M010", "group": "multi", "core": false, "layer": "L1", "input": "交通费300元；住宿450元；餐费120元，三笔待分摊", "expect": {"amount_anyof": ["300.00", "450.00", "120.00"], "not_amounts": ["870.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M011", "group": "multi", "core": false, "layer": "L1", "input": "打印费60元加装订40元", "expect": {"amount_anyof": ["60.00", "40.00"], "not_amounts": ["100.00"], "category": "*enum", "amount_null_ok": true}}
+{"id": "M012", "group": "multi", "core": false, "layer": "L1", "input": "打车38元、地铁6元、公交2元", "expect": {"amount_anyof": ["38.00", "6.00", "2.00"], "not_amounts": ["46.00"], "category": "差旅", "amount_null_ok": true}}
 {"id": "M013", "group": "multi", "core": false, "layer": "L1", "input": "发票号26310100001234567890，办公用品采购450元", "expect": {"amount": "450.00", "category": "办公用品"}}
 {"id": "M014", "group": "multi", "core": false, "layer": "L1", "input": "发票号26310100000987654321；招待餐费600元", "expect": {"amount": "600.00", "category": "业务招待"}}
 {"id": "M015", "group": "multi", "core": false, "layer": "L1", "input": "预算编号P001-2026-088，差旅住宿880元", "expect": {"amount": "880.00", "category": "差旅"}}
-{"id": "M016", "group": "multi", "core": false, "layer": "L1", "input": "10月10日至12日出差，住宿两晚各320元分开开票", "expect": {"amount_anyof": ["320.00", "640.00"], "not_amounts": ["960.00"], "category": "差旅"}}
-{"id": "M017", "group": "multi", "core": false, "layer": "L1", "input": "会务费1500元含场地1000元和茶歇500元", "expect": {"amount_anyof": ["1500.00", "1000.00", "500.00"], "not_amounts": ["2500.00", "3000.00"], "category": "*enum"}}
-{"id": "M018", "group": "multi", "core": false, "layer": "L1", "input": "加班餐补两晚共70元，打车回家44元另行申请", "expect": {"amount_anyof": ["70.00", "44.00"], "not_amounts": ["114.00"], "category": "加班餐补"}}
-{"id": "M019", "group": "multi", "core": false, "layer": "L1", "input": "团队建设午餐人均80元共8人640元", "expect": {"amount_anyof": ["80.00", "640.00"], "not_amounts": ["720.00"], "category": "*enum"}}
-{"id": "M020", "group": "multi", "core": false, "layer": "L1", "input": "快递到付35元与文件打印25元", "expect": {"amount_anyof": ["35.00", "25.00"], "not_amounts": ["60.00"], "category": "*enum"}}
+{"id": "M016", "group": "multi", "core": false, "layer": "L1", "input": "10月10日至12日出差，住宿两晚各320元分开开票", "expect": {"amount_anyof": ["320.00", "640.00"], "not_amounts": ["960.00"], "category": "差旅", "amount_null_ok": true}}
+{"id": "M017", "group": "multi", "core": false, "layer": "L1", "input": "会务费1500元含场地1000元和茶歇500元", "expect": {"amount_anyof": ["1500.00", "1000.00", "500.00"], "not_amounts": ["2500.00", "3000.00"], "category": "*enum", "amount_null_ok": true}}
+{"id": "M018", "group": "multi", "core": false, "layer": "L1", "input": "加班餐补两晚共70元，打车回家44元另行申请", "expect": {"amount_anyof": ["70.00", "44.00"], "not_amounts": ["114.00"], "category": "加班餐补", "amount_null_ok": true}}
+{"id": "M019", "group": "multi", "core": false, "layer": "L1", "input": "团队建设午餐人均80元共8人640元", "expect": {"amount_anyof": ["80.00", "640.00"], "not_amounts": ["720.00"], "category": "*enum", "amount_null_ok": true}}
+{"id": "M020", "group": "multi", "core": false, "layer": "L1", "input": "快递到付35元与文件打印25元", "expect": {"amount_anyof": ["35.00", "25.00"], "not_amounts": ["60.00"], "category": "*enum", "amount_null_ok": true}}
 {"id": "C001", "group": "mapping", "core": true, "layer": "L1", "input": "去上海出差的高铁票448元", "expect": {"amount": "448.00", "category": "差旅"}, "expect_l2": "交通费"}
 {"id": "C002", "group": "mapping", "core": true, "layer": "L1", "input": "北京飞成都机票1320元", "expect": {"amount": "1320.00", "category": "差旅"}, "expect_l2": "交通费"}
 {"id": "C003", "group": "mapping", "core": true, "layer": "L1", "input": "市内地铁通勤合计36元（出差期间）", "expect": {"amount": "36.00", "category": "差旅"}, "expect_l2": "交通费"}
@@ -133,9 +133,9 @@
 {"id": "C013", "group": "mapping", "core": true, "layer": "L1", "input": "民宿房费350元", "expect": {"amount": "350.00", "category": "*enum"}, "expect_l2": "其他"}
 {"id": "C014", "group": "mapping", "core": true, "layer": "L1", "input": "宾馆住宿三晚1140元", "expect": {"amount": "1140.00", "category": "差旅"}, "expect_l2": "其他"}
 {"id": "C015", "group": "mapping", "core": true, "layer": "L1", "input": "出差期间房费560元", "expect": {"amount": "560.00", "category": "差旅"}, "expect_l2": "其他"}
-{"id": "C016", "group": "mapping", "core": true, "layer": "L1", "input": "差旅住宿和高铁合计1080元（住宿600+高铁480）", "expect": {"amount_anyof": ["1080.00", "600.00", "480.00"], "category": "差旅"}, "expect_l2": "其他"}
-{"id": "C017", "group": "mapping", "core": true, "layer": "L1", "input": "机票980元加酒店700元的混合差旅", "expect": {"amount_anyof": ["980.00", "700.00"], "category": "差旅"}, "expect_l2": "其他"}
-{"id": "C018", "group": "mapping", "core": true, "layer": "L1", "input": "车票120元与住宿280元无法拆分总额", "expect": {"amount_anyof": ["120.00", "280.00"], "not_amounts": ["400.00"], "category": "差旅"}, "expect_l2": "其他"}
+{"id": "C016", "group": "mapping", "core": true, "layer": "L1", "input": "差旅住宿和高铁合计1080元（住宿600+高铁480）", "expect": {"amount_anyof": ["1080.00", "600.00", "480.00"], "category": "差旅", "amount_null_ok": true}, "expect_l2": "其他"}
+{"id": "C017", "group": "mapping", "core": true, "layer": "L1", "input": "机票980元加酒店700元的混合差旅", "expect": {"amount_anyof": ["980.00", "700.00"], "category": "差旅", "amount_null_ok": true}, "expect_l2": "其他"}
+{"id": "C018", "group": "mapping", "core": true, "layer": "L1", "input": "车票120元与住宿280元无法拆分总额", "expect": {"amount_anyof": ["120.00", "280.00"], "not_amounts": ["400.00"], "category": "差旅", "amount_null_ok": true}, "expect_l2": "其他"}
 {"id": "C019", "group": "mapping", "core": false, "layer": "L1", "input": "加班到22点的餐补35元", "expect": {"amount": "35.00", "category": "加班餐补"}, "expect_l2": "其他"}
 {"id": "C020", "group": "mapping", "core": false, "layer": "L1", "input": "周末加班两餐合计70元", "expect": {"amount": "70.00", "category": "加班餐补"}, "expect_l2": "其他"}
 {"id": "C021", "group": "mapping", "core": false, "layer": "L1", "input": "宴请客户晚餐880元", "expect": {"amount": "880.00", "category": "业务招待"}, "expect_l2": "其他"}

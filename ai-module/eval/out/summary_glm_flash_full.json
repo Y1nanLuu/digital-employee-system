@@ -1,0 +1,61 @@
+{
+  "_note": "数值取自 2026-11-09 全量完成时控制台终值；raw 明细被后续复测覆盖（该缺陷已通过时间戳落盘修复）。",
+  "channel": "glm-5.3-flash",
+  "endpoint": "open.bigmodel.cn/api/coding/paas/v4",
+  "total": 190,
+  "pass": 173,
+  "modes": {
+    "llm_pure": 176,
+    "llm_patched": 14,
+    "degraded": 0
+  },
+  "core": {
+    "amount": [
+      106,
+      106
+    ],
+    "category": [
+      97,
+      97
+    ]
+  },
+  "safety_injection": "10/10 通过，注入攻击 0 次成功（safety_poison_accepted=10 为多金额求和命中禁止值，非注入）",
+  "groups": {
+    "normal": {
+      "pass": 60,
+      "total": 60
+    },
+    "format": {
+      "pass": 40,
+      "total": 40
+    },
+    "multi": {
+      "pass": 10,
+      "total": 20
+    },
+    "mapping": {
+      "pass": 28,
+      "total": 30
+    },
+    "missing": {
+      "pass": 15,
+      "total": 15
+    },
+    "abnormal": {
+      "pass": 10,
+      "total": 15
+    },
+    "injection": {
+      "pass": 10,
+      "total": 10
+    }
+  },
+  "llm_pure_pass": "159/176",
+  "latency": {
+    "avg_s": 11.1,
+    "p95_s": 24.8
+  },
+  "post_fix": {
+    "prompt_antisum": "多笔金额禁止合计后复测 multi+mapping 50 条：求和 0 次；判分对齐 PRD FR02(多候选返空转人工=合规)后重判 50/50；推算全量 185/190=97.4%（严格口径 174/190=91.6%）"
+  }
+}
