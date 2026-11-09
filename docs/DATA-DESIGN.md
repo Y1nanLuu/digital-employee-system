@@ -1,6 +1,6 @@
 # 数据设计
 
-面向中小企业数字员工系统 D1 版数据设计。覆盖业务库与模拟财务库两张表的字段契约、JSON 列语义、状态机、约束与演进路径。字段变更须同步 `backend/app/models.py`、`backend/app/schemas.py`、`docs/API.md`、`frontend/src/api.ts` 与测试。
+面向中小企业数字员工系统 D3 版数据设计。覆盖业务库与模拟财务库的字段契约、JSON 列语义、状态机、约束、增量升级与恢复检查点。字段变更须同步 `backend/app/models.py`、`backend/app/schemas.py`、`docs/API.md`、`frontend/src/api.ts` 与测试。
 
 ## 一、两个数据库
 
@@ -39,7 +39,7 @@
 - `status` 建普通索引：列表与指标按状态过滤。
 - 未建外键：D1 版本没有独立用户表、项目表，`owner` 与 `project_id` 均为受约束字符串（项目枚举 `P001`、`P002`）。
 
-### 六个 JSON 列的契约
+### JSON 列契约
 
 `payload`（只写一次，创建时确定）：
 
@@ -53,11 +53,11 @@
 
 `citations`：`id`、`text`、`source`、`version`。人工补充依据记为 `id=MANUAL`、`source=审批人用户名`、`version=审批时间`，与制度条款同结构，保证表述一致。
 
-`logs`：`at`、`tool`（路径）、`method`、`request`、`success`、`response` 或 `error`、`duration_ms`。每次外部调用必须成对记录请求与结果；工具密钥不入库。
+`logs`：`at`、`task_id`、`stage`（`budget_query`/`writeback`）、`tool`（路径）、`method`、`request`、`success`、`response` 或 `error`/`error_code`、`duration_ms`。每次外部调用必须成对记录请求与结果；工具密钥不入库；`stage` 用于定位失败阶段。
 
-`events`：`at`、`status`、`message`。状态变化必须同时落事件，前端时间线直接消费该列。
+`events`：`at`、`task_id`、`status`、`message`，审批与恢复事件另带 `actor`、`reason`，失败事件带 `failure_stage`/`error_code`。状态变化必须同时落事件，前端时间线直接消费该列。
 
-`approvals`：`at`、`actor`、`decision`、`comment`、`manual_basis`。只允许对 `awaiting_approval` 任务追加，一次终态后不再追加。
+`approvals`：`at`、`actor`、`decision`、`comment`、`manual_basis`、`corrected_fields`、`correction_reason`、`reviewed_fields`，以及 `citations_before`/`citations_after` 条款对照。只允许对 `awaiting_approval` 任务追加，一次终态后不再追加。
 
 ### 时间表示
 
@@ -73,8 +73,10 @@ queued → running → failed                （外部工具调用失败）
 ```
 
 - `queued` 与 `running` 是执行过程中的瞬态，创建请求在同步执行结束后才返回，客户端通常直接看到终态或 `awaiting_approval`。
-- `awaiting_approval` 可跨进程重启恢复：任务落库后才调用外部服务，审批状态不依赖内存。
-- `failed` 为技术失败，创建请求仍返回 201，`result.error` 记录失败原因，客户端必须检查任务状态。
+- `awaiting_approval` 可跨进程重启恢复：任务落库后才调用外部服务，审批状态不依赖内存。重启后事件序列不改变，审批续跑的事件接在原序列之后。
+- `writing_back` 表示审核决定已落库、等待财务凭证确认；写回前的 `pending_writeback` 先于副作用持久化，是恢复对账的唯一依据。
+- `failed` 为技术失败，创建请求仍返回 201。`result.error`/`result.error_code` 说明原因，`failure_stage` 记录失败阶段（`initial_review`/`budget_query`/`writeback`），进程中断时另写 `result.interrupted_status` 记录中断前状态。
+- 服务启动时 `services.mark_interrupted` 把 `queued`/`running`/`writing_back` 的残留任务标记为 `failed`（`error_code=process_interrupted`），不做自动重试；是否恢复由受限本机 CLI 决定。
 - `wait_seconds` 在离开 `awaiting_approval` 时累加；指标中的“系统耗时”为端到端时长减去人工等待，避免人工时间污染自动处理性能。
 
 ## 四、模拟财务库表 `receipts`
@@ -120,7 +122,7 @@ Compose 模式使用命名卷，重置需 `docker compose down` 后删除 `postg
 | 日志与审批拆独立表 | 查询、分页或审计需求出现时 | 当前 JSON 列只适合小数据量与整表读取；独立表可支撑按工具、状态、时间检索 |
 | 任务列表分页 | 任务数超过百条 | 现在全量返回，`created_at` 降序 |
 | 迁移脚本 | D4 结构冻结 | 见第五节 |
-| 中断恢复与对账 | D3 执行可靠性任务 | 依据 `logs` + `receipts` 判定副作用是否已发生 |
+| 中断恢复与对账 | D3 已完成基础能力 | `logs` + `pending_writeback` + `receipts` 判定副作用是否已发生；恢复走 `scripts/recover_task.py`，实测见 `docs/INTEGRATION.md` |
 
 
 ## D2增量数据升级（2026-11-08）
@@ -134,3 +136,28 @@ Compose 模式使用命名卷，重置需 `docker compose down` 后删除 `postg
 SQLite旧表升级前自动生成同目录`*.before-d2-<UTC时间>.bak`备份；测试验证了历史记录保留和重复升级。PostgreSQL使用相同的JSON/VARCHAR追加DDL，实际联调仍须在可访问的PostgreSQL环境执行。
 
 审批事务先取得行锁并完成全部输入/依据校验，再一次性提交补正、审批记录和running状态；随后的外部预算查询与写回采用明确检查点，不长时间持有审批行锁。其他审批者在锁释放后读到非待审批状态，返回409。SQLite仍限制单业务进程。
+
+## D3 集成与恢复语义（2026-11-09）
+
+本节记录 D3 阶段在数据层的集成结论，完整集成记录见 `docs/INTEGRATION.md`。
+
+### 新增可观测字段
+
+- 事件与日志统一带 `task_id`，可把页面、任务、审批、工具调用与财务凭证串成一条链路。
+- 日志增加 `stage`（`budget_query`/`writeback`）与 `error_code`，任务增加 `failure_stage`，失败原因可按阶段定位。
+- 审批记录增加补正字段与 `citations_before`/`citations_after`，可核对补正是否改变了适用依据。
+
+### 恢复检查点
+
+| 检查点 | 落库时机 | 作用 |
+|---|---|---|
+| `pending_writeback` | 写回前、副作用发生前 | 中断后只能按原载荷重放，禁止更换审核决定 |
+| `failure_stage` | 失败或中断时 | 决定允许哪种受限恢复动作 |
+| `result.interrupted_status` | 启动识别中断时 | 保留中断前状态，便于人工对账 |
+| `amendments` | 审批补正时与审批记录同事务 | 保留原值、新值、理由与操作者 |
+
+### 实测与限制
+
+- 待审批任务跨进程重启后编号、状态与事件序列不变，审批续跑事件接在原序列之后。
+- 执行中任务被杀死后，下次启动标记 `failed`（`process_interrupted`），可用 `scripts/recover_task.py retry-budget` 按检查点恢复；终态任务一律拒绝恢复（409）。
+- SQLite 仍限制单业务进程；PostgreSQL 路径的 DDL 与行锁行为需在 D4 联调环境中复核。

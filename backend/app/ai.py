@@ -57,6 +57,11 @@ def _flag(name):
     return os.getenv(name, '').strip().lower() in _TRUE
 
 
+def ai_enabled():
+    """模型通道是否启用；供健康检查等集成诊断使用。"""
+    return _flag('AI_MODULE_ENABLED')
+
+
 def _provider_reachable(config, timeout=0.4):
     """本地模型通道做快速端口预检；远程通道不预检，由模型通道自身超时控制。"""
     providers = config.get('providers')

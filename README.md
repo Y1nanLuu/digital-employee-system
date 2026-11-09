@@ -119,11 +119,15 @@ Windows PowerShell：
 .\.venv\Scripts\python.exe scripts/smoke.py
 # 对已启动的标准端口服务执行演示步骤与接口约定校验（需先启动8000与8001）
 .\.venv\Scripts\python.exe scripts/verify_system.py
+# D3集成面：状态事件序列、权限矩阵、解析快照与补正、指标核对（需先启动8000与8001）
+.\.venv\Scripts\python.exe scripts/verify_integration.py
+# 重启与受限恢复：待审批续跑、进程中断标记、CLI恢复（自起自停）
+.\.venv\Scripts\python.exe scripts/verify_restart.py
 cd frontend
 npm.cmd run build
 ```
 
-`scripts/smoke.py`自行启动并停止临时服务与临时库，适合提交前门禁；`scripts/verify_system.py`校验标准端口上真实运行的整套服务，含六个演示步骤、校验、权限、幂等、指标与工具鉴权共36项断言。
+`scripts/smoke.py`自行启动并停止临时服务与临时库，适合提交前门禁；`scripts/verify_system.py`校验标准端口上真实运行的整套服务，含六个演示步骤、校验、权限、幂等、指标与工具鉴权共43项断言；`scripts/verify_integration.py`校验跨模块集成面51项，`scripts/verify_restart.py`校验重启与恢复19项。集成版本、状态转换与恢复机制见 `docs/INTEGRATION.md`。
 
 集成测试使用独立临时SQLite数据库，以及连接两个FastAPI应用的HTTP模拟传输，验证接口契约和状态流转，不覆盖个人开发数据。Docker镜像构建与PostgreSQL联调需在Docker可运行环境另行验证。
 
@@ -152,7 +156,7 @@ backend/tests/              流程、权限、边界、异常及幂等测试
 frontend/src/App.vue        员工端概览、报销提交、任务追踪及审批/指标兼容页面
 frontend/src/api.ts         前端接口类型和请求适配
 scripts/                   依赖安装、前台启动脚本及集成验证脚本
-docs/                      接口约定(API.md)、架构与责任(ARCHITECTURE.md)、数据设计(DATA-DESIGN.md)、启动与部署约定(DEPLOYMENT.md)及成员材料
+docs/                      接口约定(API.md)、架构与责任(ARCHITECTURE.md)、数据设计(DATA-DESIGN.md)、启动与部署约定(DEPLOYMENT.md)、D3集成版本说明(INTEGRATION.md)及成员材料
 ai-module/                 AI与知识检索模块：字段提取（LLM+规则双轨）、制度库16条、检索方案（见ai-module/README.md）
 compose.yaml               PostgreSQL及三服务编排
 ```

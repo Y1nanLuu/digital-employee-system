@@ -37,6 +37,8 @@
 | `AI_MODULE_ENABLED` | `false` | 业务后端 | 字段提取是否走 ai-module 模型通道；关闭时使用内置规则基线 |
 | `AI_MODULE_CONFIG` | `ai-module/model_config.json` | 业务后端 | 模型通道配置路径，切换 `active` 即可换通道（deepseek/local_qwen/rule） |
 | `AI_PYTHON` | 系统 `python` | `scripts/dev.ps1 ai` | 启动本地模型服务所用解释器，需含 `transformers`/`torch` |
+| `APP_VERSION` | `0.3.0` | 业务后端 | 集成版本号，经 `GET /health` 暴露，便于验收确认运行版本 |
+| `APP_STAGE` | `D3-integration` | 业务后端 | 阶段标识，与版本号一并用于现场核对 |
 
 约定：
 
@@ -97,7 +99,7 @@ docker compose up --build -d
 ## 五、验证命令
 
 ```powershell
-# 单元与流程测试（临时库，覆盖流程、权限、边界、异常、幂等）
+# 单元与流程测试（临时库，覆盖流程、权限、边界、异常、幂等、迁移与 AI 适配层）
 .\.venv\Scripts\python.exe -m pytest -c backend/pytest.ini backend/tests -q
 
 # 真实 HTTP 链路：启动两个服务、校验链路、杀死业务进程后验证审批恢复
@@ -106,27 +108,34 @@ docker compose up --build -d
 # 前端类型检查与生产构建
 cd frontend; npm.cmd run build
 
-# 对正在运行的服务执行演示场景与接口约定校验（需先启动 8000 与 8001）
+# 以下两项需先启动 8000 与 8001
+# 演示场景与接口约定校验
 .\.venv\Scripts\python.exe scripts/verify_system.py
+# D3 集成面：状态事件序列、权限矩阵、解析快照与冲突、审批补正、指标交叉核对
+.\.venv\Scripts\python.exe scripts/verify_integration.py
+
+# 重启与受限恢复（自起自停临时服务，含进程中断与 CLI 恢复）
+.\.venv\Scripts\python.exe scripts/verify_restart.py
 ```
 
-`scripts/smoke.py` 与 `scripts/verify_system.py` 的区别：前者自起自停临时服务、可用作提交前门禁；后者校验**标准端口上真实运行的整套服务**，包含 README 的六个演示步骤，适合联调与验收现场。
+四个脚本的分工：`smoke.py` 与 `verify_restart.py` 自起自停临时服务，可作为提交前门禁；`verify_system.py` 校验标准端口上真实运行的整套服务（六个演示步骤）；`verify_integration.py` 校验跨模块集成面。集成版本与实测汇总见 `docs/INTEGRATION.md`。
 
-## 六、实测结果（D1 基线 + D2 集成）
+## 六、实测结果（D3 集成版 0.3.0）
 
-在 Windows 11 + Python 3.14.7 + Node 26.8.1 上执行，结果为合并各成员 D2 提交、并接入 ai-module 适配层后的状态。
+在 Windows 11 + Python 3.14.7 + Node 26.8.1 上执行，代码基线为合并各成员 D3 提交后的 `master`；运行版本可从 `GET /health` 的 `version`/`stage` 字段确认。
 
 | 项目 | 结果 |
 |---|---|
 | `scripts/setup.ps1` 等价步骤（venv + 后端依赖、`npm ci`） | 通过，无漏洞报告 |
-| `pytest backend/tests` | 57 项全部通过（含 AI 适配层 9 项） |
-| `scripts/smoke.py` | 通过：真实 HTTP、唯一任务编号、按编号查询、任务与凭证持久化、提交幂等、预算样例与不扣减、自动初审、审批续跑、预算拒绝、指标 |
+| `pytest backend/tests` | 109 项全部通过 |
+| `scripts/smoke.py` | 通过：解析快照、原子补正、初始请求重放、写回中断检测与 CLI 对账、预算样例与不扣减、审批续跑、指标 |
 | `npm run build` | 通过，产物 `dist/`（js 88.55 kB、css 12.57 kB） |
 | 本地三服务启动 | 通过：8000/8001 健康检查 200，5173 首页 200 且 `/api` 代理到 8000 |
 | `scripts/verify_system.py` | 43 项断言全部通过（六个演示步骤 + 校验、权限、幂等、指标、工具鉴权、任务编号贯穿、AI 开关状态） |
-| 启用 `AI_MODULE_ENABLED=true` 的 `/api/parse` | 通过：结构化报销单提取全 8 字段（`source=rule`），`差旅→交通费` 映射生效；模型服务未启动时 `fallback_event.trigger=llm_preflight_unreachable` 且业务字段仍由规则兜底 |
-| Docker Compose | 未验证：当前环境无 Docker，PostgreSQL 链路需在有 Docker 的机器上补测 |
-| 本地模型通道（8010） | 未验证：开发机无 `transformers`/`torch`，该通道仅验证了降级路径 |
+| `scripts/verify_integration.py` | 51 项断言全部通过（健康与版本、四类场景事件序列、权限矩阵、解析快照与冲突、审批补正、指标交叉核对、凭证回溯） |
+| `scripts/verify_restart.py` | 19 项断言全部通过（重启保留与续跑、幂等重放、执行中任务标记中断、受限恢复、终态拒绝） |
+| Docker Compose | 未验证：当前环境无 Docker，PostgreSQL 链路列入 D4 |
+| 本地模型通道（8010） | 未验证：开发机无 `transformers`/`torch`，仅验证降级路径与规则路径 |
 
 ## 七、已知问题与常见故障
 
@@ -134,9 +143,10 @@ cd frontend; npm.cmd run build
 - SQLite 单进程限制：不要同时起两个业务后端指向同一个 `tasks.db`，写操作会互相干扰。
 - `backend/data/` 与 `frontend/node_modules/`、`frontend/dist/`、`work/` 均不入库；换机器后必须重新执行依赖准备。
 - 数据重置：删除 `backend/data/tasks.db`、`backend/data/finance.db` 后重启；Compose 见 `docs/DATA-DESIGN.md` 第七节。
-- 任务跨账号、跨角色变化不会自动刷新，需要点击“刷新”；轮询或推送不在 D1 范围。
+- 任务跨账号、跨角色变化不会自动刷新，需要点击“刷新”；轮询或推送不在本期范围。
 - Compose 首次启动较慢，`db`、`finance` 均带健康检查，后端会等待其就绪；若失败先看 `docker compose logs finance`。
 - 启用模型通道后若 `/api/parse` 明显变慢，先确认 8010 是否真的在监听；远程通道的超时由 `ai-module/model_config.json` 的 `timeout_seconds` 控制，演示环境建议保持 `AI_MODULE_ENABLED=false`。
+- 服务重启后形如 `failed` 且 `result.error_code=process_interrupted` 的任务属预期：中断标记而非业务结论，按第七节后续说明用受限 CLI 处置。
 
 
 ## D2数据库升级与故障处置

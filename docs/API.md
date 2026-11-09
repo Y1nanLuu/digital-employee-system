@@ -6,7 +6,7 @@
 
 | 方法 | 地址 | 权限 | 用途 |
 |---|---|---|---|
-| GET | /health | 无 | 数据库连接与服务健康 |
+| GET | /health | 无 | 数据库连接与服务健康；返回`status`、`mode`、`version`、`stage`、`ai_enabled`、`database` |
 | GET | /api/me | 登录用户 | 当前身份和角色 |
 | POST | /api/parse | 登录用户 | 字段提取建议，返回规则、模型或降级建议及持久化解析编号 |
 | POST | /api/tasks | employee | 确认字段后创建并执行任务；必须有Idempotency-Key头 |
@@ -88,8 +88,8 @@
 | `result` | `decision`、`reason`、`mode`、`budget`、`receipt`、`error` |
 | `citations` | 引用条款：`id`、`text`、`source`、`version`；人工依据记为 `id=MANUAL` |
 | `logs` | 工具调用日志：`task_id`、`stage`、`at`、`tool`、`method`、`request`、`success`、`response`或`error`、`duration_ms` |
-| `events` | 状态事件：`at`、`status`、`message` |
-| `approvals` | 审批记录：`at`、`actor`、`decision`、`comment`、`manual_basis` |
+| `events` | 状态事件：`at`、`task_id`、`status`、`message`；审批与恢复事件另带`actor`、`reason`，失败事件带`failure_stage`/`error_code` |
+| `approvals` | 审批记录：`at`、`actor`、`decision`、`comment`、`manual_basis`、`corrected_fields`、`correction_reason`、`reviewed_fields`，以及`citations_before`/`citations_after` |
 | `created_at` | 创建时间（UTC ISO） |
 | `finished_at` | 终态时间，未结束为 `null` |
 | `manual` | 是否发生过转人工 |
@@ -145,7 +145,9 @@
 
 ## 一致性核对
 
-交互式完整字段契约见运行后的两个服务 `/docs`。改动后按下述顺序核对：`schemas.py` → 本文件 → `frontend/src/api.ts` → `backend/tests` → `scripts/verify_system.py`。联调现场用 `scripts/verify_system.py` 对标准端口服务执行 36 项断言，覆盖六个演示步骤、校验、权限、幂等、指标与工具鉴权。
+交互式完整字段契约见运行后的两个服务 `/docs`。改动后按下述顺序核对：`schemas.py` → 本文件 → `frontend/src/api.ts` → `backend/tests` → `scripts/verify_system.py` → `scripts/verify_integration.py`。
+
+联调现场按顺序执行：`scripts/verify_system.py`（标准端口 43 项，六个演示步骤与接口契约）→ `scripts/verify_integration.py`（51 项，状态事件序列、账号权限矩阵、解析快照与冲突、审批补正、指标交叉核对、凭证回溯）→ `scripts/verify_restart.py`（19 项，重启保留与续跑、中断标记与受限恢复）。集成版本与实测结果见 `docs/INTEGRATION.md`。
 
 
 ## D2/D3：解析关联、冲突确认与补正

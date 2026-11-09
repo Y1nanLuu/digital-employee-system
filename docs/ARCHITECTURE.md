@@ -22,7 +22,7 @@ flowchart LR
 | `ai-module/`（独立进程） | 8010 | 制度文档与本地输出 | 字段提取（LLM + 规则双轨）、制度库 16 条、检索方案 |
 | `db`（PostgreSQL 17） | 5432（容器网络） | 命名卷 | Compose 模式下的业务库 |
 
-启动约定、环境变量与验证命令见 `docs/DEPLOYMENT.md`；字段契约、JSON 列语义、状态机与迁移策略见 `docs/DATA-DESIGN.md`；接口清单见 `docs/API.md`。
+启动约定、环境变量与验证命令见 `docs/DEPLOYMENT.md`；字段契约、JSON 列语义、状态机与迁移策略见 `docs/DATA-DESIGN.md`；接口清单见 `docs/API.md`；D3 集成版本、状态转换、权限矩阵与恢复机制见 `docs/INTEGRATION.md`。
 
 ## 接口边界
 
@@ -41,8 +41,10 @@ flowchart LR
 |---|---|
 | 启用开关 | 环境变量 `AI_MODULE_ENABLED`（默认关闭，关闭时走内置规则基线，行为与 D1 完全一致） |
 | 可达性预检 | 本地模型通道先做 0.4 秒端口预检，失败即改用纯规则配置 `backend/app/data/ai_rule_only.json`，避免按模型通道 120 秒超时阻塞 `/api/parse` |
-| 枚举与格式映射 | AI 侧 `expense_type`（差旅/办公用品/加班餐补/业务招待）映射到业务类别（交通费/办公用品/其他）；金额统一为两位小数字符串 |
-| 契约与降级留痕 | 保持 `mode`、`suggested_amount`、`suggested_category`、`requires_confirmation`、`message` 五个既有字段不变，追加 `ai_enabled`、`source`、`model`、`fields`、`missing_fields`、`patched_fields`、`violations`、`fallback_event` |
+| 枚举与格式映射 | 按说明内容映射业务类别（交通/车票/机票/高铁等→交通费，住宿/餐饮/招待→其他，办公用品→办公用品）；AI 侧 `expense_type` 仅作辅助，`差旅` 归为其他，实现见 `validation.category_for`；金额统一为两位小数字符串 |
+| 契约与降级留痕 | 保持 `mode`、`suggested_amount`、`suggested_category`、`requires_confirmation`、`message` 五个既有字段不变，追加 `ai_enabled`、`source`、`model`、`fields`、`missing_fields`、`patched_fields`、`violations`、`amount_candidates`、`conflicts`、`requires_manual_review`、`fallback_event` |
+
+`mode` 的取值随来源区分：`rule_baseline`（规则基线）、`rule_fallback`（模型不可用降级）、`llm`（模型提取）、`llm_with_rule_patch`（模型提取但个别字段经规则补齐或值被剔除）。`requires_manual_review` 为真时，任务执行会把“模型处理异常，须由审批人核对字段”并入转人工原因，避免降级结果被当作可信数据直接自动通过。
 
 降级链与 `ai-module` 的三层防线对齐：L1 解析容错与 L2 字段级仲裁在其内部完成；L3 整体降级时适配层追加 `fallback_event.trigger`（`llm_preflight_unreachable`、`ai_config_unreadable`、`ai_module_unavailable`），并把业务侧规则基线作为自由文本的兜底来源——`ai-module` 的规则路径以键值对为主，自由文本（如“交通费320元”）提取不到业务字段，兜底后降级体验不会低于未接入。
 
@@ -54,16 +56,21 @@ flowchart LR
 
 ## 集成验证
 
-- `scripts/smoke.py`：自起自停临时服务与临时库，验证真实 HTTP 链路、唯一任务编号与按编号查询、任务及凭证持久化、提交幂等、预算样例与不扣减、审批续跑、预算拒绝与指标，可作为提交前门禁。
+- `scripts/smoke.py`：自起自停临时服务与临时库，验证真实 HTTP 链路、解析快照、原子补正、初始请求重放、写回中断检测与 CLI 对账、预算样例与不扣减、审批续跑与指标，可作为提交前门禁。
 - `scripts/verify_system.py`：对标准端口上真实运行的服务执行 README 六个演示步骤，以及校验、权限、幂等、指标、工具鉴权、任务编号贯穿与 AI 开关状态共 43 项断言。
-- `pytest backend/tests`：流程、权限、边界、异常、幂等与 AI 适配层，当前 109 项；前端以 `npm run build` 保证类型检查与构建通过。
+- `scripts/verify_integration.py`：D3 集成面 51 项断言，覆盖健康与版本、四类场景事件序列、账号权限矩阵、解析快照与字段冲突、审批补正、指标与任务数据交叉核对、凭证回溯。
+- `scripts/verify_restart.py`：真实进程重启 19 项断言，覆盖待审批任务跨重启续跑、幂等重放、执行中任务被标记中断、受限恢复与终态拒绝。
+- `scripts/recover_task.py`：受限本机运维入口，只按既有检查点恢复（`replay-writeback` / `retry-budget`），不接受新的审核载荷。
+- `pytest backend/tests`：契约、权限、边界、异常、幂等、迁移与 AI 适配层，当前 109 项；前端以 `npm run build` 保证类型检查与构建通过。
+
+集成版本的完整记录（版本标识、权限矩阵、事件序列、恢复机制、实测结果与限制）见 `docs/INTEGRATION.md`。
 
 ## 待开发事项
 
 | 负责人 | 下一步 |
 |---|---|
 | 卢亦楠 | 确认业务规则，维护验收样例、范围和共享看板 |
-| 张程量 | 数据迁移、端到端部署验证、执行中断恢复方案、提交并发策略 |
+| 张程量 | D3 已完成集成版本与恢复验证；D4 负责 Compose/PostgreSQL 联调、模型通道联调与固定候选基准 |
 | 王可 | 员工端组件拆分、字段冲突确认、交互完善 |
 | 王丹蕊 | 审批台组件拆分、状态筛选、指标图表和日志可读性 |
 | 周勃 | 补正与故障恢复端到端复测、PostgreSQL兼容验证；分页与自动重试调度按P1后置 |

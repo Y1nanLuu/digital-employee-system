@@ -12,8 +12,8 @@ from .database import SessionLocal, engine, get_db
 from .models import ParseSnapshot, Task
 from .migrations import initialize_database
 from .schemas import ApprovalInput, ClaimInput, ParseInput, TaskResponse
-from . import services
-from .ai import parse_fields
+from . import config, services
+from .ai import ai_enabled, parse_fields
 from .validation import input_conflicts
 
 # SQLite本地版仅支持一个进程；PostgreSQL审批同时使用行锁。
@@ -26,12 +26,14 @@ async def lifespan(app):
         services.mark_interrupted(db)
     yield
 
-app = FastAPI(title='数字员工业务服务', version='0.1.0', lifespan=lifespan)
+app = FastAPI(title='数字员工业务服务', version=config.APP_VERSION, lifespan=lifespan)
 
 @app.get('/health')
 def health(db: Session = Depends(get_db)):
     db.execute(text('SELECT 1'))
-    return {'status': 'ok', 'mode': 'rule_baseline'}
+    return {'status': 'ok', 'mode': 'rule_baseline', 'version': config.APP_VERSION,
+            'stage': config.APP_STAGE, 'ai_enabled': ai_enabled(),
+            'database': engine.dialect.name}
 
 @app.get('/api/me')
 def me(user=Depends(current_user)):
