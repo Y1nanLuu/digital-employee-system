@@ -156,6 +156,12 @@ def parse_fields(description: str):
         return {**baseline, 'ai_enabled': False}
 
     config_path = Path(os.getenv('AI_MODULE_CONFIG') or DEFAULT_CONFIG)
+    # 允许写相对仓库根目录的路径（如 ai-module/model_config.deepseek.json）：
+    # uvicorn 的工作目录是 backend/，相对路径会解析错位，这里统一按仓库根目录纠正。
+    if not config_path.is_absolute() and not config_path.exists():
+        candidate = REPO_ROOT / config_path
+        if candidate.exists():
+            config_path = candidate
     try:
         config = json.loads(config_path.read_text(encoding='utf-8'))
         if not isinstance(config, dict):

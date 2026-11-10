@@ -1,0 +1,23 @@
+{
+  "active": "deepseek",
+  "providers": {
+    "local_qwen": {
+      "base_url": "http://127.0.0.1:8010/v1",
+      "api_key": "local",
+      "model": "Qwen/Qwen1.5-0.5B-Chat"
+    },
+    "deepseek": {
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key": "ENV:DEEPSEEK_API_KEY",
+      "model": "deepseek-chat"
+    },
+    "glm_flash": {
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "api_key": "ENV:GLM_API_KEY",
+      "model": "glm-4-flash"
+    }
+  },
+  "timeout_seconds": 120,
+  "temperature": 0,
+  "_comment": "远程模型通道覆盖配置：默认 model_config.json 保持 local_qwen 不动，需要真实模型时用 AI_MODULE_CONFIG 指向本文件即可。密钥仍然只从环境变量 DEEPSEEK_API_KEY / GLM_API_KEY 读取，禁止写入本文件（PRD 4.2）。"
+}
