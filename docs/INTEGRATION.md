@@ -6,8 +6,8 @@
 
 | 项 | 值 |
 |---|---|
-| 应用版本 | `0.3.0`（`APP_VERSION`，可用同名环境变量覆盖） |
-| 阶段标识 | `D3-integration`（`APP_STAGE`） |
+| 应用版本 | `0.4.0`（`APP_VERSION`，可用同名环境变量覆盖） |
+| 阶段标识 | `D4-baseline`（`APP_STAGE`） |
 | 代码基线 | 拉取 `origin/master` 至 `296209b`（含周勃「任务快照、审批补正与故障恢复」、王丹蕊审批与指标、测试证据与产品 D3 归档） |
 | 数据库结构 | `create_all` + 自建增量升级（`backend/app/migrations.py`），升级前自动备份 `.bak` |
 | 健康检查 | `GET /health` 返回 `status`、`mode`、`version`、`stage`、`ai_enabled`、`database`，用于现场确认运行版本与依赖状态 |
@@ -190,3 +190,17 @@
 ### 范围提示
 
 本功能超出了 PRD V0.3 的原始范围（原文把 OCR 列为不纳入项），属于 D4 由用户要求追加的变更。若保留到候选版，需产品在范围内确认并同步需求文档与看板；若不保留，可整体回退本节涉及的四类改动（`invoices.py`、`/api/invoices` 路由、`invoice_id` 字段、前端上传区块）。
+
+## 十二、D4 候选基准（2026-11-10）
+
+D4 停止新增功能，把当日验证通过的集成版本固定为候选基准，D5 在此基础上发布候选版。
+
+| 项 | 值 |
+|---|---|
+| 版本 | `0.4.0`（`APP_VERSION`），阶段标识 `D4-baseline`（`APP_STAGE`） |
+| 基准范围 | 规则业务闭环、人工审批与补正、解析快照与冲突确认、任务溯源、执行中断与受限恢复、发票 PDF 上传与字段抽取、指标口径、D4 模型通道联调 |
+| 回归门禁 | `pytest` 122 项；`smoke.py`；`verify_system.py` 43 项；`verify_integration.py` 51 项；`verify_restart.py` 19 项；`npm run build` |
+| 已知未验证 | Docker Compose / PostgreSQL 链路（本机无 Docker 引擎，核查清单见 `docs/DEPLOYMENT.md` 第六节）；本地千问通道（缺 `transformers`/`torch`） |
+| 变更纪律 | 基准之后只修缺陷，不再加功能；任何接口或数据变更按 `schemas.py → docs/API.md → frontend/src/api.ts → 测试 → 现场脚本` 顺序同步 |
+
+基准不包含的事项按 PRD 记录在案：OCR、发票验真、真实财务集成、付款与预算扣减、分页与推送、自动重试调度。
