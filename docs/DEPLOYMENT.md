@@ -154,6 +154,54 @@ docker compose down                  # 8) 停服务（不要加 -v，以免删�
 
 已知前提：镜像构建上下文是 `./backend`，**不包含仓库根目录的 `ai-module`**，因此 Compose 模式默认按规则基线运行，模型通道请用本地模式（`.env` + `dsapi.txt`）。
 
+### Docker Hub 拉取失败的处置
+
+`docker compose up` 报 `Get "https://registry-1.docker.io/v2/": ... Client.Timeout exceeded`，说明引擎已启动但**拉不动 Docker Hub 镜像**（国内网络常见）。三种处置，按优先级：
+
+1. **配置镜像加速器**（推荐）：Docker Desktop → Settings → Docker Engine，在 JSON 里加 `registry-mirrors`，保存后 Apply & Restart：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://dockerproxy.net",
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+```
+
+镜像站点可用性会变化，若某个超时换下一个；也可用公司/学校提供的私有 registry。
+2. **配代理**：Docker Desktop → Settings → Resources → Proxies 填 HTTP/HTTPS 代理（需与浏览器同网段可用）。
+3. **不用 Docker 验 PostgreSQL**：本机装 PostgreSQL 17 或连已有实例，仅改一个环境变量即可：
+
+```powershell
+$env:DATABASE_URL = 'postgresql+psycopg://employee:<密码>@127.0.0.1:5432/employee'
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 backend
+```
+
+验证目标相同：增量迁移、审批行锁、指标口径在 PostgreSQL 上是否与 SQLite 一致。
+
+### 容器内的模型通道
+
+镜像构建上下文是 `./backend`，**不包含仓库根目录的 `ai-module`**。因此在容器里打开 `AI_MODULE_ENABLED` 只会得到 `mode=rule_fallback` 且 `requires_manual_review=true`，任务会全部转人工。为避免 `.env` 里本地开发用的开关被带进容器，`compose.yaml` 使用独立变量：
+
+```ini
+COMPOSE_AI_MODULE_ENABLED=false   # 默认关闭；容器内没有 ai-module，不要打开
+```
+
+需要模型通道时改用本地模式（`.env` + `dsapi.txt`）。
+
+### 各成员使用自己的模型 API
+
+密钥只经环境变量注入，**任何情况下都不要写进仓库文件**。按通道二选一：
+
+| 通道 | 需要的配置 | 密钥写在哪 |
+|---|---|---|
+| DeepSeek（默认覆盖配置） | `.env` 里 `AI_MODULE_ENABLED=true`、`AI_MODULE_CONFIG=ai-module/model_config.deepseek.json` | 项目根目录 `dsapi.txt`（单行密钥，已被忽略）**或** `.env` 里 `DEEPSEEK_API_KEY=sk-...` |
+| 智谱 GLM | `.env` 里 `AI_MODULE_ENABLED=true`、`AI_MODULE_CONFIG=ai-module/model_config.local.json`（自己复制一份，`active` 改 `glm_flash`） | `.env` 里 `GLM_API_KEY=...` |
+
+私有覆盖配置放在 `ai-module/model_config.local*.json`（已被 `.gitignore` 忽略），内容照抄 `ai-module/model_config.json` 后只改 `active` 与自己要用的模型名即可。多人协作时**不要**改共享的 `ai-module/model_config.json`，否则会影响其他人的演示。
+
 ### 干净目录启动清单
 
 1. 复制或克隆仓库到新目录，确认没有 `.venv/`、`frontend/node_modules/`、`backend/data/`、`.env`、`dsapi.txt`。

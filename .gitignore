@@ -22,3 +22,5 @@ ai-module/eval/api_keys.env
 
 # Office/WPS 打开文档时生成的锁文件
 ~$*
+# 本地私有模型覆盖配置（各人按自己的通道复制一份，不进库）
+ai-module/model_config.local*.json

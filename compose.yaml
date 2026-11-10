@@ -36,8 +36,10 @@ services:
       APP_VERSION: ${APP_VERSION:-0.4.0}
       APP_STAGE: ${APP_STAGE:-D4-baseline}
       # 构建上下文是 ./backend，镜像内不含仓库根目录的 ai-module，
-      # 因此 Compose 模式默认按规则基线运行；需要模型通道请用本地模式启动。
-      AI_MODULE_ENABLED: ${AI_MODULE_ENABLED:-false}
+      # 因此容器里打开模型通道只会得到 rule_fallback + 转人工。
+      # 这里用独立的 COMPOSE_AI_MODULE_ENABLED，避免 .env 里本地开发用的
+      # AI_MODULE_ENABLED=true 被带进容器。
+      AI_MODULE_ENABLED: ${COMPOSE_AI_MODULE_ENABLED:-false}
     depends_on:
       db:
         condition: service_healthy
