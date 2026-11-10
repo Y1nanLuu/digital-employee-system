@@ -1,0 +1,45 @@
+PASS  GET /health 返回 ok
+PASS  GET finance /health 返回 ok
+PASS  /api/me 返回 employee 与角色
+PASS  /api/me 返回 approver 与角色
+PASS  场景1 P001 交通费300 自动初审通过
+PASS  场景1 日志含预算查询与写回
+PASS  场景1 引用制度条款
+PASS  场景1 幂等重放返回同一任务
+PASS  场景1 响应未暴露 request_key(契约缺口)
+PASS  场景2 办公用品1500 进入待审批
+PASS  场景2 幂等重放无重复任务
+PASS  场景2 员工账号不能审批(403)
+PASS  场景2 审批通过后任务 succeeded
+PASS  场景2 通过后产生第3次工具日志
+PASS  场景2 重复审批返回409
+PASS  场景3 审批拒绝后状态 rejected
+PASS  场景3 拒绝也写回凭证
+PASS  场景4 P002 600 预算不足被拒
+PASS  场景5 其他类别转人工
+PASS  场景5 无依据通过且未填人工依据返回422
+PASS  场景5 补充人工依据后通过
+PASS  金额0被拒(422)
+PASS  金额超过5000被拒(422)
+PASS  未来日期被拒(422)
+PASS  非法项目被拒(422)
+PASS  confirmed=false 被拒(422)
+PASS  同幂等键换内容返回409
+PASS  /api/metrics 返回六项指标
+PASS  指标已完成数与任务总数一致
+PASS  员工账号查指标返回403
+PASS  无认证访问任务返回401
+PASS  财务服务缺工具密钥被拒(401/403)
+PASS  财务服务预算查询返回样例
+PASS  P002 预算500
+PASS  /api/parse 返回基础契约
+PASS  /api/parse 金额为320
+PASS  /api/parse 按明确高铁用途映射交通费
+PASS  /api/parse 暴露 ai_enabled 开关状态
+PASS  任务详情按编号可查且与创建结果一致
+PASS  工具日志中的写回请求携带同一任务编号
+PASS  财务凭证编号可由任务编号追溯
+PASS  财务服务同内容重放返回原凭证
+PASS  财务服务同编号换内容返回409
+
+总计 43 项，通过 43 项，失败 0 项

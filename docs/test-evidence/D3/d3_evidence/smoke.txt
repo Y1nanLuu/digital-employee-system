@@ -1,0 +1,4 @@
+PASS: integrated service verification — 总计 43 项，通过 43 项，失败 0 项
+PASS: real HTTP, unique task IDs, task lookup, persisted tasks and receipts, submit idempotency after process restart
+PASS: parse snapshots, atomic amendments, initial-request replay, interrupted writeback detection and CLI reconciliation
+PASS: budget samples, no budget deduction, automatic review, approval resume, budget rejection, metrics
