@@ -135,7 +135,7 @@ cd frontend; npm.cmd run build
 | `scripts/verify_integration.py` | 51 项断言全部通过（健康与版本、四类场景事件序列、权限矩阵、解析快照与冲突、审批补正、指标交叉核对、凭证回溯） |
 | `scripts/verify_restart.py` | 19 项断言全部通过（重启保留与续跑、幂等重放、执行中任务标记中断、受限恢复、终态拒绝） |
 | 发票 PDF 上传（端到端） | 14 项断言通过：真实模型抽取、冲突拦截、显式确认后自动通过、任务快照保留发票来源 |
-| Docker Compose | **未验证**：当前环境无 Docker 引擎；`compose.yaml` 已按 D4 要求补齐版本与模型开关变量，需在有 Docker 的机器上按下面清单执行一次 |
+| Docker Compose / PostgreSQL | **已验证（2026-11-10）**：4 容器 healthy；`/health` 返回 `database=postgresql`、`version=0.4.0`；`verify_system.py` 46 项、`verify_integration.py` 51 项在 PG 上全过；PG 增量升级（删列后重启自动补齐）与容器内发票上传（pypdf）均通过 |
 | 本地模型通道（8010） | **未验证**：开发机无 `transformers`/`torch`；远程 DeepSeek 通道已实测 |
 
 ### Docker / PostgreSQL 核查清单（需 Docker 环境执行）
@@ -151,6 +151,21 @@ curl.exe http://127.0.0.1:8080/          # 6) 前端应能打开（nginx 代理 
 # 7) 走一遍六步演示（见 README），确认 PostgreSQL 上的迁移、审批续跑与指标
 docker compose down                  # 8) 停服务（不要加 -v，以免删数据卷）
 ```
+
+2026-11-10 实测记录（Windows 11 + Docker Desktop 28.1.1 + Engine 29.x）：
+
+```text
+docker compose up -d --build   → db/finance/backend/frontend 全部 healthy
+GET :8000/health               → {"version":"0.4.0","stage":"D4-baseline","database":"postgresql","ai_enabled":false}
+GET :8080/                     → 200
+verify_system.py               → 46/46
+verify_integration.py          → 51/51
+PostgreSQL 表                   → tasks、parse_snapshots（owner=employee）
+增量升级验证                    → DROP COLUMN failure_stage 后重启 backend，列被自动补回
+容器内发票上传                  → 200，mode=rule_baseline（容器无模型通道），金额 320.00、票面提示正常
+```
+
+国内网络拉取 Docker Hub 会超时，本次通过 `registry-mirrors`（`docker.m.daocloud.io`、`dockerproxy.net`）解决；加速器需写在 `~/.docker/daemon.json` 的 `registry-mirrors` 中（Docker Desktop → Settings → Docker Engine 亦可），且该文件**必须是 UTF-8 无 BOM**，否则 Docker 启动报 `parsing daemon.json: invalid character 'ï'`。
 
 已知前提：镜像构建上下文是 `./backend`，**不包含仓库根目录的 `ai-module`**，因此 Compose 模式默认按规则基线运行，模型通道请用本地模式（`.env` + `dsapi.txt`）。
 

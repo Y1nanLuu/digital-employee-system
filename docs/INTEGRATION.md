@@ -213,7 +213,8 @@ D4 停止新增功能，把当日验证通过的集成版本固定为候选基�
 | 版本 | `0.4.0`（`APP_VERSION`），阶段标识 `D4-baseline`（`APP_STAGE`） |
 | 基准范围 | 规则业务闭环、人工审批与补正、解析快照与冲突确认、任务溯源、执行中断与受限恢复、发票 PDF 上传与字段抽取、指标口径、D4 模型通道联调 |
 | 回归门禁 | `pytest` 131 项；`smoke.py`；`verify_system.py` 46 项；`verify_integration.py` 51 项；`verify_restart.py` 19 项；发票端到端 14 项；`npm run build` |
-| 已知未验证 | Docker Compose / PostgreSQL 链路（本机无 Docker 引擎，核查清单见 `docs/DEPLOYMENT.md` 第六节）；本地千问通道（缺 `transformers`/`torch`） |
+| 已验证 | 本地 SQLite 全链路；Docker Compose + PostgreSQL 四容器健康、迁移、审批、指标与发票上传（2026-11-10 实测，步骤见 `docs/DEPLOYMENT.md` 第六节） |
+| 已知未验证 | 本地千问通道（缺 `transformers`/`torch`）；Compose 容器内的模型通道（镜像不含 `ai-module`，默认关闭） |
 | 变更纪律 | 基准之后只修缺陷，不再加功能；任何接口或数据变更按 `schemas.py → docs/API.md → frontend/src/api.ts → 测试 → 现场脚本` 顺序同步 |
 
 基准不包含的事项按 PRD 记录在案：OCR、发票验真、真实财务集成、付款与预算扣减、分页与推送、自动重试调度。
