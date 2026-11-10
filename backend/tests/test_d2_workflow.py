@@ -156,14 +156,17 @@ def test_correction_retrieves_new_basis_and_rechecks_changed_project(clients):
     assert result['result']['budget']['project_id'] == 'P002'
 
 
-def test_concurrent_approval_has_one_effect(clients):
+@pytest.mark.parametrize('decision', ['approve', 'reject'])
+def test_concurrent_approval_has_one_effect(clients, decision):
     client, _ = clients
     task = submit(client, claim(amount='1500')).json()
     with ThreadPoolExecutor(max_workers=2) as pool:
-        codes = list(pool.map(lambda _: approve(client, task).status_code, range(2)))
+        codes = list(pool.map(lambda _: approve(client, task, decision).status_code, range(2)))
     assert sorted(codes) == [200, 409]
     saved = client.get('/api/tasks/' + task['id'], auth=('employee', 'demo123')).json()
-    assert len(saved['approvals']) == 1 and len(saved['logs']) == 3
+    assert len(saved['approvals']) == 1
+    assert len(saved['logs']) == (3 if decision == 'approve' else 2)
+    assert saved['status'] == ('succeeded' if decision == 'approve' else 'rejected')
 
 
 def test_concurrent_submission_and_normalized_replay(clients):

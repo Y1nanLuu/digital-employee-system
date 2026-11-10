@@ -9,10 +9,15 @@
     "deepseek": {
       "base_url": "https://api.deepseek.com/v1",
       "api_key": "ENV:DEEPSEEK_API_KEY",
-      "model": "deepseek-chat"
+      "model": "deepseek-flash"
+    },
+    "glm_flash": {
+      "base_url": "https://open.bigmodel.cn/api/coding/paas/v4",
+      "api_key": "ENV:GLM_API_KEY",
+      "model": "glm-5.3-flash"
     }
   },
   "timeout_seconds": 120,
   "temperature": 0,
-  "_comment": "三通道切换: active = deepseek(远程API) / local_qwen(本地llm_server) / rule(纯规则)。DEEPSEEK_API_KEY 通过环境变量注入, 禁止写入本文件(PRD 4.2)。timeout_seconds 按 PRD FR03 默认且上限 120 秒。"
+  "_comment": "多通道切换: active = glm_flash / deepseek(远程API) / local_qwen(本地) / rule(纯规则)。密钥一律环境变量注入(GLM_API_KEY / DEEPSEEK_API_KEY), 禁止写入本文件(PRD 4.2)。glm 模型名以 open.bigmodel.cn 控制台实际提供为准(如 glm-4-flash / glm-4.5-flash), 改 model 字段即可。timeout_seconds 按 PRD FR03 默认且上限 120 秒。"
 }

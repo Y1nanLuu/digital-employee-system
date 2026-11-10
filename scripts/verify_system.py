@@ -10,6 +10,7 @@
 """
 import base64
 import json
+from math import isclose
 import os
 import sys
 import urllib.error
@@ -129,7 +130,15 @@ code, metrics = call(BACKEND, '/api/metrics', role='admin')
 expect('/api/metrics 返回六项指标', all(k in metrics for k in
        ['total', 'completed', 'completion_rate', 'manual_rate',
         'average_processing_seconds', 'average_end_to_end_seconds']), metrics)
-expect('指标已完成数与任务总数一致', metrics['completed'] == metrics['total'], metrics)
+code, all_tasks = call(BACKEND, '/api/tasks', role='admin')
+completed = sum(task['status'] in ('succeeded', 'rejected') for task in all_tasks)
+manual = sum(task['manual'] for task in all_tasks)
+expect('指标总数与真实任务列表一致', metrics['total'] == len(all_tasks), metrics)
+expect('指标完成数仅包含 succeeded/rejected', metrics['completed'] == completed, metrics)
+expect('完成率按真实任务状态计算，允许历史待审批与失败',
+       isclose(metrics['completion_rate'], completed / len(all_tasks), abs_tol=1e-9), metrics)
+expect('转人工率包含已续跑任务的人工历史',
+       isclose(metrics['manual_rate'], manual / len(all_tasks), abs_tol=1e-9), metrics)
 expect('员工账号查指标返回403', status_of(BACKEND, '/api/metrics') == 403)
 expect('无认证访问任务返回401', status_of(BACKEND, '/api/tasks', role=None) == 401)
 

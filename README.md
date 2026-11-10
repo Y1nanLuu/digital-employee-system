@@ -119,11 +119,17 @@ Windows PowerShell：
 .\.venv\Scripts\python.exe scripts/smoke.py
 # 对已启动的标准端口服务执行演示步骤与接口约定校验（需先启动8000与8001）
 .\.venv\Scripts\python.exe scripts/verify_system.py
+# D3集成面：状态事件序列、权限矩阵、解析快照与补正、指标核对（需先启动8000与8001）
+.\.venv\Scripts\python.exe scripts/verify_integration.py
+# 重启与受限恢复：待审批续跑、进程中断标记、CLI恢复（自起自停）
+.\.venv\Scripts\python.exe scripts/verify_restart.py
 cd frontend
 npm.cmd run build
 ```
 
-`scripts/smoke.py`自行启动并停止临时服务与临时库，适合提交前门禁；`scripts/verify_system.py`校验标准端口上真实运行的整套服务，含六个演示步骤、校验、权限、幂等、指标与工具鉴权共36项断言。
+`scripts/smoke.py`自行启动并停止临时服务与临时库，适合提交前门禁；`scripts/verify_system.py`校验标准端口上真实运行的整套服务，含六个演示步骤、校验、权限、幂等、指标与工具鉴权共46项断言；`scripts/verify_integration.py`校验跨模块集成面51项，`scripts/verify_restart.py`校验重启与恢复19项。集成版本、状态转换与恢复机制见 `docs/INTEGRATION.md`。
+
+冒烟脚本会保留历史待审批及失败任务，连续执行两轮46项验证，再执行51项集成验证；按真实状态核算指标，不要求演示库所有任务均已完成。四类场景的任务、日志及凭证写入 `work/smoke-summary.json`；重启验证的逐项结果写入输出目录内的 `summary.json`。子进程输出统一按UTF-8读写，故障中断使用强制结束测试进程，正常重启仍使用优雅停止。
 
 集成测试使用独立临时SQLite数据库，以及连接两个FastAPI应用的HTTP模拟传输，验证接口契约和状态流转，不覆盖个人开发数据。Docker镜像构建与PostgreSQL联调需在Docker可运行环境另行验证。
 
@@ -152,7 +158,7 @@ backend/tests/              流程、权限、边界、异常及幂等测试
 frontend/src/App.vue        员工端概览、报销提交、任务追踪及审批/指标兼容页面
 frontend/src/api.ts         前端接口类型和请求适配
 scripts/                   依赖安装、前台启动脚本及集成验证脚本
-docs/                      接口约定(API.md)、架构与责任(ARCHITECTURE.md)、数据设计(DATA-DESIGN.md)、启动与部署约定(DEPLOYMENT.md)及成员材料
+docs/                      接口约定(API.md)、架构与责任(ARCHITECTURE.md)、数据设计(DATA-DESIGN.md)、启动与部署约定(DEPLOYMENT.md)、D3集成版本说明(INTEGRATION.md)及成员材料
 ai-module/                 AI与知识检索模块：字段提取（LLM+规则双轨）、制度库16条、检索方案（见ai-module/README.md）
 compose.yaml               PostgreSQL及三服务编排
 ```
@@ -161,7 +167,7 @@ compose.yaml               PostgreSQL及三服务编排
 
 员工端支持表单草稿恢复、金额/日期/说明校验、字段提取建议、提交幂等保护、任务搜索与状态筛选，以及制度依据和执行时间线展示。实现说明与自测清单见 docs 目录。
 
-报销提交、任务查询及模拟财务接口的本次实现记录和验收结果见 [周勃-后端开发日志](docs/周勃-后端开发日志.md)。
+报销提交、任务查询及模拟财务接口的实现记录和每日验收结果见 [周勃-开发日志汇总](docs/周勃-开发日志汇总.md)。
 
 ## 现有限制和下一步
 
@@ -185,4 +191,4 @@ compose.yaml               PostgreSQL及三服务编排
 - 页面支持冲突确认、模型异常核对、补正与审计；提交结果不明时保留原请求和标识供重试。
 - 写回前保存检查点，启动识别执行中断；恢复命令只按原编号和载荷处理。
 
-本次实际开发与验收记录见[周勃-D2开发日志](docs/周勃-D2开发日志.md)。数据库升级与恢复方法见[部署说明](docs/DEPLOYMENT.md)。
+实际开发与验收记录按日期保存在[周勃-开发日志汇总](docs/周勃-开发日志汇总.md)。数据库升级与恢复方法见[部署说明](docs/DEPLOYMENT.md)。

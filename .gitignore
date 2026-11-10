@@ -13,3 +13,6 @@ work/
 .env.*
 !.env.example
 ai-module/outputs/
+
+# 本地密钥文件，严禁入库
+ai-module/eval/api_keys.env

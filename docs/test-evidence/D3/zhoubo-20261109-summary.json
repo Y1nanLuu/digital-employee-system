@@ -1,0 +1,838 @@
+{
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "code_baseline": "7897aa1 + local D3-05 changes (uncommitted)",
+  "environment": "Linux, Python 3.13.13; isolated SQLite databases and random local ports",
+  "backend_tests": {
+    "passed": 118,
+    "warnings": 1,
+    "note": "Starlette TestClient httpx deprecation warning"
+  },
+  "encoding_check": {
+    "parent_subprocess_default": "cp936 (simulated on Linux)",
+    "result": "passed",
+    "windows_native_tested": false
+  },
+  "frontend_build": "passed",
+  "browser_scenario_groups": {
+    "passed": 4,
+    "page_errors": 0
+  },
+  "smoke": {
+    "recorded_at": "2026-11-09T20:20:38.502548+08:00",
+    "verification_runs": [
+      {
+        "script": "verify_system.py",
+        "exit_code": 0,
+        "summary": "总计 46 项，通过 46 项，失败 0 项"
+      },
+      {
+        "script": "verify_system.py",
+        "exit_code": 0,
+        "summary": "总计 46 项，通过 46 项，失败 0 项"
+      },
+      {
+        "script": "verify_integration.py",
+        "exit_code": 0,
+        "summary": "总计 51 项，通过 51 项，失败 0 项"
+      }
+    ],
+    "historical_tasks_preserved": true,
+    "metrics": {
+      "total": 23,
+      "completed": 20,
+      "completion_rate": 0.8695652173913043,
+      "manual_rate": 0.5217391304347826,
+      "average_processing_seconds": 0.235996,
+      "average_end_to_end_seconds": 0.3385046
+    },
+    "scenarios": {
+      "compliant": {
+        "id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+        "status": "succeeded",
+        "manual": false,
+        "payload": {
+          "project_id": "P001",
+          "category": "交通费",
+          "amount": "300.00",
+          "expense_date": "2026-11-09",
+          "description": "客户现场往返交通费300元",
+          "confirmed": true
+        },
+        "result": {
+          "mode": "rule_baseline",
+          "execution_stage": "writeback",
+          "budget": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "manual_reasons": [],
+          "decision": "approved",
+          "reason": "金额、制度和预算校验通过",
+          "interrupted_status": "writing_back",
+          "receipt": {
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "decision": "approved",
+            "reason": "金额、制度和预算校验通过",
+            "receipt_id": "demo-8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "simulated": true
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-09T12:20:30.991348+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "running",
+            "message": "按确认字段、有效制度与预算执行初审"
+          },
+          {
+            "at": "2026-11-09T12:20:31.019396+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "writing_back",
+            "message": "审核决定已保存，等待模拟财务凭证确认"
+          },
+          {
+            "at": "2026-11-09T12:20:31.047928+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "succeeded",
+            "message": "金额、制度和预算校验通过"
+          },
+          {
+            "at": "2026-11-09T12:20:33.990987+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "failed",
+            "message": "服务执行中断，须按原阶段和原载荷受限处置",
+            "failure_stage": "writeback",
+            "error_code": "process_interrupted"
+          },
+          {
+            "at": "2026-11-09T12:20:34.897721+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "writing_back",
+            "message": "受限运维按原载荷重放写回",
+            "actor": "smoke-admin",
+            "reason": "按原编号对账"
+          },
+          {
+            "at": "2026-11-09T12:20:34.897764+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "writing_back",
+            "message": "审核决定已保存，等待模拟财务凭证确认"
+          },
+          {
+            "at": "2026-11-09T12:20:34.937150+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "status": "succeeded",
+            "message": "金额、制度和预算校验通过"
+          }
+        ],
+        "logs": [
+          {
+            "at": "2026-11-09T12:20:30.993155+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "stage": "budget_query",
+            "tool": "/budgets/P001",
+            "endpoint": "http://127.0.0.1:54759/budgets/P001",
+            "method": "GET",
+            "request": null,
+            "success": true,
+            "response": {
+              "project_id": "P001",
+              "available": "10000.00",
+              "currency": "CNY",
+              "simulated": true
+            },
+            "duration_ms": 24.03
+          },
+          {
+            "at": "2026-11-09T12:20:31.021445+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "stage": "writeback",
+            "tool": "/results",
+            "endpoint": "http://127.0.0.1:54759/results",
+            "method": "POST",
+            "request": {
+              "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+              "decision": "approved",
+              "reason": "金额、制度和预算校验通过"
+            },
+            "success": true,
+            "response": {
+              "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+              "decision": "approved",
+              "reason": "金额、制度和预算校验通过",
+              "receipt_id": "demo-8693ff59-0750-447a-a0e4-16bad4fd2605",
+              "simulated": true
+            },
+            "duration_ms": 26.39
+          },
+          {
+            "at": "2026-11-09T12:20:34.900812+00:00",
+            "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+            "stage": "writeback",
+            "tool": "/results",
+            "endpoint": "http://127.0.0.1:54759/results",
+            "method": "POST",
+            "request": {
+              "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+              "decision": "approved",
+              "reason": "金额、制度和预算校验通过"
+            },
+            "success": true,
+            "response": {
+              "task_id": "8693ff59-0750-447a-a0e4-16bad4fd2605",
+              "decision": "approved",
+              "reason": "金额、制度和预算校验通过",
+              "receipt_id": "demo-8693ff59-0750-447a-a0e4-16bad4fd2605",
+              "simulated": true
+            },
+            "duration_ms": 36.3
+          }
+        ],
+        "approvals": [],
+        "amendments": []
+      },
+      "approval_approved": {
+        "id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+        "status": "succeeded",
+        "manual": true,
+        "payload": {
+          "project_id": "P001",
+          "category": "办公用品",
+          "amount": "900.00",
+          "expense_date": "2026-11-09",
+          "description": "客户现场办公用品1500元",
+          "confirmed": true
+        },
+        "result": {
+          "mode": "structured_input",
+          "execution_stage": "writeback",
+          "budget": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "manual_reasons": [
+            "金额超过1000元"
+          ],
+          "reason": "重启后人工核验通过",
+          "decision": "approved",
+          "receipt": {
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "decision": "approved",
+            "reason": "重启后人工核验通过",
+            "receipt_id": "demo-8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "simulated": true
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-09T12:20:31.072026+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "status": "running",
+            "message": "按确认字段、有效制度与预算执行初审"
+          },
+          {
+            "at": "2026-11-09T12:20:31.086422+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "status": "awaiting_approval",
+            "message": "金额超过1000元"
+          },
+          {
+            "at": "2026-11-09T12:20:33.042699+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "status": "running",
+            "message": "人工核对已提交，沿原任务继续硬规则校验"
+          },
+          {
+            "at": "2026-11-09T12:20:33.076581+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "status": "writing_back",
+            "message": "审核决定已保存，等待模拟财务凭证确认"
+          },
+          {
+            "at": "2026-11-09T12:20:33.094031+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "status": "succeeded",
+            "message": "重启后人工核验通过"
+          }
+        ],
+        "logs": [
+          {
+            "at": "2026-11-09T12:20:31.073637+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "stage": "budget_query",
+            "tool": "/budgets/P001",
+            "endpoint": "http://127.0.0.1:54759/budgets/P001",
+            "method": "GET",
+            "request": null,
+            "success": true,
+            "response": {
+              "project_id": "P001",
+              "available": "10000.00",
+              "currency": "CNY",
+              "simulated": true
+            },
+            "duration_ms": 11.05
+          },
+          {
+            "at": "2026-11-09T12:20:33.049860+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "stage": "budget_query",
+            "tool": "/budgets/P001",
+            "endpoint": "http://127.0.0.1:54759/budgets/P001",
+            "method": "GET",
+            "request": null,
+            "success": true,
+            "response": {
+              "project_id": "P001",
+              "available": "10000.00",
+              "currency": "CNY",
+              "simulated": true
+            },
+            "duration_ms": 24.58
+          },
+          {
+            "at": "2026-11-09T12:20:33.078321+00:00",
+            "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+            "stage": "writeback",
+            "tool": "/results",
+            "endpoint": "http://127.0.0.1:54759/results",
+            "method": "POST",
+            "request": {
+              "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+              "decision": "approved",
+              "reason": "重启后人工核验通过"
+            },
+            "success": true,
+            "response": {
+              "task_id": "8f9c2f66-920f-418a-b875-1123cf9b2705",
+              "decision": "approved",
+              "reason": "重启后人工核验通过",
+              "receipt_id": "demo-8f9c2f66-920f-418a-b875-1123cf9b2705",
+              "simulated": true
+            },
+            "duration_ms": 15.69
+          }
+        ],
+        "approvals": [
+          {
+            "at": "2026-11-09T12:20:33.042474+00:00",
+            "actor": "approver",
+            "decision": "approve",
+            "comment": "重启后人工核验通过",
+            "manual_basis": "",
+            "corrected_fields": {
+              "project_id": null,
+              "category": null,
+              "amount": "900.00",
+              "expense_date": null,
+              "description": null
+            },
+            "correction_reason": "核对后扣除个人承担部分",
+            "reviewed_fields": true,
+            "citations_before": [
+              {
+                "id": "DEMO-01",
+                "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:31.072056+00:00"
+              },
+              {
+                "id": "DEMO-02",
+                "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:31.072064+00:00"
+              },
+              {
+                "id": "DEMO-03",
+                "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:31.072071+00:00"
+              },
+              {
+                "id": "DEMO-04",
+                "text": "申请金额不得超过项目可用预算。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:31.072077+00:00"
+              },
+              {
+                "id": "DEMO-05",
+                "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:31.072083+00:00"
+              }
+            ],
+            "citations_after": [
+              {
+                "id": "DEMO-01",
+                "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:33.042403+00:00"
+              },
+              {
+                "id": "DEMO-02",
+                "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:33.042435+00:00"
+              },
+              {
+                "id": "DEMO-03",
+                "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:33.042448+00:00"
+              },
+              {
+                "id": "DEMO-04",
+                "text": "申请金额不得超过项目可用预算。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:33.042456+00:00"
+              },
+              {
+                "id": "DEMO-05",
+                "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:33.042464+00:00"
+              }
+            ]
+          }
+        ],
+        "amendments": [
+          {
+            "at": "2026-11-09T12:20:33.042474+00:00",
+            "actor": "approver",
+            "reason": "核对后扣除个人承担部分",
+            "before": {
+              "amount": "1500.00"
+            },
+            "after": {
+              "amount": "900.00"
+            }
+          }
+        ]
+      },
+      "approval_rejected": {
+        "id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+        "status": "rejected",
+        "manual": true,
+        "payload": {
+          "project_id": "P001",
+          "category": "办公用品",
+          "amount": "1500.00",
+          "expense_date": "2026-11-09",
+          "description": "客户现场采购办公用品1500元",
+          "confirmed": true
+        },
+        "result": {
+          "mode": "structured_input",
+          "execution_stage": "writeback",
+          "budget": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "manual_reasons": [
+            "金额超过1000元"
+          ],
+          "reason": "超标准，材料不全",
+          "decision": "rejected",
+          "receipt": {
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "decision": "rejected",
+            "reason": "超标准，材料不全",
+            "receipt_id": "demo-858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "simulated": true
+          }
+        },
+        "events": [
+          {
+            "at": "2026-11-09T12:20:38.082018+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "status": "running",
+            "message": "按确认字段、有效制度与预算执行初审"
+          },
+          {
+            "at": "2026-11-09T12:20:38.094320+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "status": "awaiting_approval",
+            "message": "金额超过1000元"
+          },
+          {
+            "at": "2026-11-09T12:20:38.101192+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "status": "running",
+            "message": "人工核对已提交，沿原任务继续硬规则校验"
+          },
+          {
+            "at": "2026-11-09T12:20:38.102692+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "status": "writing_back",
+            "message": "审核决定已保存，等待模拟财务凭证确认"
+          },
+          {
+            "at": "2026-11-09T12:20:38.118916+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "status": "rejected",
+            "message": "超标准，材料不全"
+          }
+        ],
+        "logs": [
+          {
+            "at": "2026-11-09T12:20:38.083235+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "stage": "budget_query",
+            "tool": "/budgets/P001",
+            "endpoint": "http://127.0.0.1:54759/budgets/P001",
+            "method": "GET",
+            "request": null,
+            "success": true,
+            "response": {
+              "project_id": "P001",
+              "available": "10000.00",
+              "currency": "CNY",
+              "simulated": true
+            },
+            "duration_ms": 9.31
+          },
+          {
+            "at": "2026-11-09T12:20:38.104003+00:00",
+            "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+            "stage": "writeback",
+            "tool": "/results",
+            "endpoint": "http://127.0.0.1:54759/results",
+            "method": "POST",
+            "request": {
+              "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+              "decision": "rejected",
+              "reason": "超标准，材料不全"
+            },
+            "success": true,
+            "response": {
+              "task_id": "858bd4ab-25cb-4c6e-907f-01319ff7301e",
+              "decision": "rejected",
+              "reason": "超标准，材料不全",
+              "receipt_id": "demo-858bd4ab-25cb-4c6e-907f-01319ff7301e",
+              "simulated": true
+            },
+            "duration_ms": 14.79
+          }
+        ],
+        "approvals": [
+          {
+            "at": "2026-11-09T12:20:38.101151+00:00",
+            "actor": "approver",
+            "decision": "reject",
+            "comment": "超标准，材料不全",
+            "manual_basis": "",
+            "corrected_fields": null,
+            "correction_reason": "",
+            "reviewed_fields": true,
+            "citations_before": [
+              {
+                "id": "DEMO-01",
+                "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082033+00:00"
+              },
+              {
+                "id": "DEMO-02",
+                "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082037+00:00"
+              },
+              {
+                "id": "DEMO-03",
+                "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082040+00:00"
+              },
+              {
+                "id": "DEMO-04",
+                "text": "申请金额不得超过项目可用预算。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082042+00:00"
+              },
+              {
+                "id": "DEMO-05",
+                "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082045+00:00"
+              }
+            ],
+            "citations_after": [
+              {
+                "id": "DEMO-01",
+                "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082033+00:00"
+              },
+              {
+                "id": "DEMO-02",
+                "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082037+00:00"
+              },
+              {
+                "id": "DEMO-03",
+                "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082040+00:00"
+              },
+              {
+                "id": "DEMO-04",
+                "text": "申请金额不得超过项目可用预算。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082042+00:00"
+              },
+              {
+                "id": "DEMO-05",
+                "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+                "source": "模拟费用报销制度",
+                "version": "demo-v1",
+                "retrieved_at": "2026-11-09T12:20:38.082045+00:00"
+              }
+            ]
+          }
+        ],
+        "amendments": []
+      },
+      "missing_basis_to_human": {
+        "id": "55560904-1fdd-4d0f-93e9-e3587b646e1a",
+        "status": "awaiting_approval",
+        "manual": true,
+        "payload": {
+          "project_id": "P001",
+          "category": "其他",
+          "amount": "300.00",
+          "expense_date": "2026-11-09",
+          "description": "专项其他费用300元元",
+          "confirmed": true
+        },
+        "result": {
+          "mode": "structured_input",
+          "execution_stage": "budget_query",
+          "budget": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "manual_reasons": [
+            "缺少适用制度依据"
+          ],
+          "reason": "缺少适用制度依据"
+        },
+        "events": [
+          {
+            "at": "2026-11-09T12:20:38.167850+00:00",
+            "task_id": "55560904-1fdd-4d0f-93e9-e3587b646e1a",
+            "status": "running",
+            "message": "按确认字段、有效制度与预算执行初审"
+          },
+          {
+            "at": "2026-11-09T12:20:38.181376+00:00",
+            "task_id": "55560904-1fdd-4d0f-93e9-e3587b646e1a",
+            "status": "awaiting_approval",
+            "message": "缺少适用制度依据"
+          }
+        ],
+        "logs": [
+          {
+            "at": "2026-11-09T12:20:38.169116+00:00",
+            "task_id": "55560904-1fdd-4d0f-93e9-e3587b646e1a",
+            "stage": "budget_query",
+            "tool": "/budgets/P001",
+            "endpoint": "http://127.0.0.1:54759/budgets/P001",
+            "method": "GET",
+            "request": null,
+            "success": true,
+            "response": {
+              "project_id": "P001",
+              "available": "10000.00",
+              "currency": "CNY",
+              "simulated": true
+            },
+            "duration_ms": 10.43
+          }
+        ],
+        "approvals": [],
+        "amendments": []
+      }
+    }
+  },
+  "restart": {
+    "recorded_at": "2026-11-09T20:17:56.151266+08:00",
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "checks": [
+      {
+        "label": "重启前任务进入 awaiting_approval",
+        "passed": true,
+        "detail": "awaiting_approval"
+      },
+      {
+        "label": "重启后待审批任务仍在且编号不变",
+        "passed": true,
+        "detail": "awaiting_approval"
+      },
+      {
+        "label": "重启不改变既有事件序列",
+        "passed": true,
+        "detail": [
+          "running",
+          "awaiting_approval"
+        ]
+      },
+      {
+        "label": "重启后可继续审批并续跑至终态",
+        "passed": true,
+        "detail": "succeeded"
+      },
+      {
+        "label": "续跑事件接在原序列之后",
+        "passed": true,
+        "detail": [
+          "running",
+          "awaiting_approval",
+          "running",
+          "writing_back",
+          "succeeded"
+        ]
+      },
+      {
+        "label": "同一幂等键重启后重放返回原任务",
+        "passed": true,
+        "detail": [
+          "606e576b-9264-4620-bdda-8a0bc16bd584",
+          "606e576b-9264-4620-bdda-8a0bc16bd584"
+        ]
+      },
+      {
+        "label": "可在中断前观测到执行中任务",
+        "passed": true,
+        "detail": "等待 0.2s"
+      },
+      {
+        "label": "中断任务在下次启动后被标记 failed",
+        "passed": true,
+        "detail": "failed"
+      },
+      {
+        "label": "失败原因标记为进程中断",
+        "passed": true,
+        "detail": {
+          "mode": "structured_input",
+          "execution_stage": "budget_query",
+          "interrupted_status": "running",
+          "error": "服务执行中断，须按原阶段和原载荷受限处置",
+          "error_code": "process_interrupted"
+        }
+      },
+      {
+        "label": "保留中断前状态用于对账",
+        "passed": true,
+        "detail": {
+          "mode": "structured_input",
+          "execution_stage": "budget_query",
+          "interrupted_status": "running",
+          "error": "服务执行中断，须按原阶段和原载荷受限处置",
+          "error_code": "process_interrupted"
+        }
+      },
+      {
+        "label": "记录中断发生的阶段",
+        "passed": true,
+        "detail": "budget_query"
+      },
+      {
+        "label": "失败任务的事件流以 failed 结束",
+        "passed": true,
+        "detail": [
+          "running",
+          "failed"
+        ]
+      },
+      {
+        "label": "受限恢复命令执行成功",
+        "passed": true,
+        "detail": ""
+      },
+      {
+        "label": "恢复后任务离开 failed 状态",
+        "passed": true,
+        "detail": "succeeded"
+      },
+      {
+        "label": "恢复后重新执行阈值校验（800元自动通过）",
+        "passed": true,
+        "detail": "succeeded"
+      },
+      {
+        "label": "恢复事件记录操作者与原因",
+        "passed": true,
+        "detail": [
+          {
+            "at": "2026-11-09T12:17:53.976368+00:00",
+            "task_id": "bf0e868f-c408-4af2-bd88-52135f4bd88e",
+            "status": "writing_back",
+            "message": "审核决定已保存，等待模拟财务凭证确认"
+          },
+          {
+            "at": "2026-11-09T12:17:54.006139+00:00",
+            "task_id": "bf0e868f-c408-4af2-bd88-52135f4bd88e",
+            "status": "succeeded",
+            "message": "金额、制度和预算校验通过"
+          }
+        ]
+      },
+      {
+        "label": "恢复不新增审批记录",
+        "passed": true,
+        "detail": []
+      },
+      {
+        "label": "恢复结果已持久化并可查询",
+        "passed": true,
+        "detail": "succeeded"
+      },
+      {
+        "label": "终态任务拒绝恢复(409)",
+        "passed": true,
+        "detail": [
+          1,
+          "仅允许处置失败任务，业务终态不可重新打开\n"
+        ]
+      }
+    ]
+  },
+  "not_verified": [
+    "PostgreSQL",
+    "Docker Compose",
+    "Windows native execution",
+    "real LLM invocation"
+  ]
+}

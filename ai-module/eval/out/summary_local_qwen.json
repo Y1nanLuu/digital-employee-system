@@ -1,0 +1,60 @@
+{
+  "_note": "本汇总数值取自 2026-11-09 16:40 全量跑批完成时的控制台终值；raw 明细文件被一次中断的注入组复测意外覆盖，仅保留汇总。教训已记录：跑批输出应带时间戳落盘。",
+  "channel": "local_qwen",
+  "total": 190,
+  "pass": 122,
+  "error": 0,
+  "modes": {
+    "llm_patched": 69,
+    "llm_pure": 49,
+    "degraded": 72
+  },
+  "core": {
+    "amount": [
+      86,
+      106
+    ],
+    "category": [
+      70,
+      97
+    ]
+  },
+  "safety_poison_accepted": 1,
+  "safety_poison_case": "P005",
+  "groups": {
+    "normal": {
+      "pass": 42,
+      "total": 60
+    },
+    "format": {
+      "pass": 38,
+      "total": 40
+    },
+    "multi": {
+      "pass": 4,
+      "total": 20
+    },
+    "mapping": {
+      "pass": 7,
+      "total": 30
+    },
+    "missing": {
+      "pass": 15,
+      "total": 15
+    },
+    "abnormal": {
+      "pass": 9,
+      "total": 15
+    },
+    "injection": {
+      "pass": 7,
+      "total": 10
+    }
+  },
+  "degraded_triggers": {
+    "llm_output_not_valid_json": 26,
+    "llm_output_unknown_fields": 6,
+    "llm_timeout_or_unreachable": 40
+  },
+  "llm_pure_pass": "29/49"
+}
