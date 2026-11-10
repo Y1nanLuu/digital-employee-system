@@ -172,6 +172,18 @@ Windows将解释器替换为`.\.venv\Scripts\python.exe`。自定义数据库或
 
 ### 可选：启用远程模型通道（DeepSeek）
 
+最省事的方式是一次性写进 `.env`（已被 `.gitignore` 忽略），之后每次只需一条 `dev.ps1 backend`：
+
+```ini
+AI_MODULE_ENABLED=true
+AI_MODULE_CONFIG=ai-module/model_config.deepseek.json
+```
+
+密钥不用写进 `.env`：项目根目录放 `dsapi.txt`（同样被忽略）时，`dev.ps1` 会自动读取为 `DEEPSEEK_API_KEY`。启动后核对 `GET /health` 的 `ai_enabled` 是否为 `true`。
+
+也可以临时用环境变量启动（只在当前终端有效，换终端或重启进程即失效）：
+
+
 仓库默认通道为 `local_qwen`（需本地模型服务），也可切换到远程 API。密钥只经环境变量注入，不写入配置文件与文档：
 
 ```powershell
