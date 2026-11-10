@@ -2,10 +2,13 @@ param([Parameter(Mandatory=$true)][ValidateSet('backend','finance','frontend','a
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location $projectRoot
-# 允许从 .env 注入的变量（.env 已被 .gitignore 忽略）：
-#   - 演示账号与工具密钥
-#   - 模型通道：开关、配置路径、以及远程通道密钥（密钥只走环境变量，不写入配置文件）
-# 已在当前终端设置的同名环境变量优先：若 .env 里没有该行，就不覆盖。
+
+# ASCII-only comments on purpose: Windows PowerShell 5.1 reads BOM-less files with
+# the system ANSI code page, so non-ASCII comments can break parsing. Keep this
+# launcher ASCII; put Chinese explanation in .env.example and docs.
+#
+# Load allowed variables from .env (gitignored). A value already set in the current
+# terminal wins: .env never overwrites it.
 if (Test-Path '.env') {
     foreach ($line in Get-Content -Encoding utf8 '.env') {
         if ($line -match '^\s*(DEMO_PASSWORD|FINANCE_KEY|POSTGRES_PASSWORD|AI_MODULE_ENABLED|AI_MODULE_CONFIG|DEEPSEEK_API_KEY|GLM_API_KEY|AI_PYTHON)=(.*)$') {
@@ -17,17 +20,21 @@ if (Test-Path '.env') {
         }
     }
 }
-# 便捷方式：项目根目录存在 dsapi.txt 且未设置 DEEPSEEK_API_KEY 时，自动作为 DeepSeek 密钥使用
+
+# Convenience: if dsapi.txt exists in the project root and DEEPSEEK_API_KEY is unset,
+# use it as the key. The file is gitignored; the key still never enters config files.
 $keyFile = Join-Path $projectRoot 'dsapi.txt'
 if (-not $env:DEEPSEEK_API_KEY -and (Test-Path $keyFile)) {
     $env:DEEPSEEK_API_KEY = (Get-Content $keyFile -Raw).Trim()
 }
+
 if ($Service -eq 'frontend') {
     Set-Location frontend
     npm.cmd run dev
 } elseif ($Service -eq 'ai') {
-    # ai-module 的本地模型服务（端口8010）。需要含 transformers/torch 的 Python，
-    # 可用环境变量 AI_PYTHON 指定解释器；缺失时只影响模型通道，适配层会降级为规则提取。
+    # Local model server on port 8010. Needs a Python with transformers/torch;
+    # set AI_PYTHON to point at it. If missing, only the model channel is affected
+    # and the adapter falls back to rule extraction.
     $aiPython = if ($env:AI_PYTHON) { $env:AI_PYTHON } else { 'python' }
     Set-Location ai-module
     & $aiPython llm_server.py
