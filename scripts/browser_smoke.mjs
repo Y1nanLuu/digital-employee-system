@@ -71,7 +71,7 @@ try {
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
   page.setDefaultTimeout(15000)
-  let abortNextSubmission = false, delayDetails = false
+  let abortNextSubmission = false, delayDetails = false, approvalRequests = 0
   await page.setRequestInterception(true)
   page.on('request', async request => {
     try {
@@ -80,6 +80,7 @@ try {
         await request.abort(); return
       }
       if (delayDetails && /\/api\/tasks\/[^/]+$/.test(request.url()) && request.method() === 'GET') await pause(300)
+      if (request.method() === 'POST' && request.url().endsWith('/approval')) approvalRequests++
       const url = new URL(request.url())
       if (['127.0.0.1','localhost'].includes(url.hostname) || ['data:','about:'].includes(url.protocol)) await request.continue()
       else await request.abort()
@@ -117,6 +118,10 @@ try {
     await labelControl('报销说明', description)
   }
   await page.goto(web)
+  await login('admin')
+  await clickText('任务与审批')
+  await page.waitForFunction(() => document.querySelector('.task-list')?.textContent.includes('暂无报销任务'))
+  await clickText('退出')
   await login('employee')
   await fillClaim('1e3','客户现场往返交通费1000元')
   await labelControl('我已核对原始说明',true)
@@ -144,6 +149,14 @@ try {
   await page.waitForSelector('.task-layout')
   const waiting = (await api('/api/tasks')).body.find(task => task.status === 'awaiting_approval')
   assert.ok(waiting.parse_snapshot.parse_id)
+  await clickText('退出'); await login('admin'); await clickText('任务与审批')
+  await clickText(waiting.id)
+  await page.waitForFunction(() => document.querySelector('.detail')?.textContent.includes('当前账号仅可查看'))
+  assert.equal(await page.$('.approval'), null)
+  const forbidden = await call(backend, '/api/tasks/' + waiting.id + '/approval', { decision:'approve', comment:'越权测试' }, {
+    Authorization:'Basic ' + Buffer.from('admin:demo123').toString('base64'),
+  })
+  assert.equal(forbidden.status, 403)
   await clickText('退出'); await login('approver'); await clickText('任务与审批')
   await page.waitForSelector('.task-layout')
   delayDetails = true
@@ -156,8 +169,10 @@ try {
   await labelControl('补正原因','扣除个人承担部分')
   await labelControl('我已核对当前有效字段',true)
   await labelControl('审批意见','已核对原始说明及金额')
-  await clickText('通过并继续')
+  assert.equal(await page.$eval('.approval button.danger', button => button.disabled), true)
+  await page.$eval('.approval', form => { form.requestSubmit(); form.requestSubmit() })
   await page.waitForFunction(() => !document.querySelector('.approval'))
+  assert.equal(approvalRequests, 1)
   const amended = (await api('/api/tasks/' + waiting.id)).body
   assert.equal(amended.status,'succeeded')
   assert.equal(amended.payload.amount,'900.00')
@@ -210,6 +225,20 @@ try {
   await page.waitForSelector('.task-layout')
   assert.equal((await api('/api/tasks')).body.length,count)
   assert.equal(await page.evaluate(() => localStorage.getItem('employee-pending:employee')),null)
+  const finance = children[0]
+  await new Promise(resolve => { finance.once('exit', resolve); finance.kill('SIGTERM') })
+  const failed = await api('/api/tasks', {
+    project_id:'P001', category:'交通费', amount:'300.00', expense_date:amended.payload.expense_date,
+    description:'客户拜访往返交通费300元', confirmed:true,
+  }, 'browser-d4-finance-error')
+  assert.equal(failed.body.status, 'failed')
+  await clickText('刷新')
+  await clickText(failed.body.id)
+  await page.waitForFunction(() => {
+    const detail = document.querySelector('.detail')?.textContent || ''
+    return detail.includes('调用错误：') && detail.includes('未记录工具响应')
+  })
+  console.log('PASS: browser empty list, read-only permission, duplicate approval lock and real tool error')
   assert.deepEqual(errors,[])
   await page.screenshot({ path: join(root,'work/browser-smoke.png'), fullPage:true })
   console.log('PASS: browser unknown-result persistence, refresh retry with original key, no duplicate task, no page errors')
