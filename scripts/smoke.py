@@ -60,7 +60,8 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
     env={**os.environ,'DATABASE_URL':'sqlite:///'+(temp/'tasks.db').as_posix(),
          'FINANCE_DATABASE_URL':'sqlite:///'+(temp/'finance.db').as_posix(),
          'FINANCE_URL':finance_url,
-         'FINANCE_KEY':'local-finance-key','DEMO_PASSWORD':'demo123','AI_MODULE_ENABLED':'false','PYTHONIOENCODING':'utf-8'}
+         'FINANCE_KEY':'local-finance-key','DEMO_PASSWORD':'demo123','AI_MODULE_ENABLED':'false',
+         'PYTHONIOENCODING':'utf-8','PYTHONUTF8':'1'}
     processes=[]
     with (ROOT/'work/smoke-services.log').open('w',encoding='utf8') as log:
         def launch(module,selected_port):
@@ -96,7 +97,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
             assert pending['status']=='awaiting_approval'
             stop(backend)
             stop(finance)
-            launch('finance.main:app',finance_port)
+            finance=launch('finance.main:app',finance_port)
             backend=launch('app.main:app',backend_port)
             assert call(backend_url,'/api/tasks/'+automatic['id'])==automatic
             assert call(backend_url,'/api/tasks',body,key=key)==automatic
@@ -128,7 +129,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
             stop(backend)
             recovered=subprocess.run([sys.executable,str(ROOT/'scripts/recover_task.py'),automatic['id'],
                                       '--action','replay-writeback','--actor','smoke-admin','--reason','按原编号对账'],
-                                     cwd=ROOT,env=env,capture_output=True,text=True,check=True)
+                                     cwd=ROOT,env=env,capture_output=True,text=True,encoding='utf-8',check=True)
             recovery_task=json.loads(recovered.stdout)
             assert recovery_task['status']=='succeeded' and recovery_task['result']['receipt']==receipt
             with sqlite3.connect(temp/'finance.db') as connection:
@@ -137,12 +138,38 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
             assert call(backend_url,'/api/tasks/'+automatic['id'])==recovery_task
             metrics=call(backend_url,'/api/metrics',role='admin')
             assert metrics['total']==3 and metrics['completed']==3
-            verified=subprocess.run([sys.executable,str(ROOT/'scripts/verify_system.py')],
-                                    cwd=ROOT,env={**env,'BACKEND_URL':backend_url},
-                                    capture_output=True,text=True)
-            if verified.returncode:
-                raise RuntimeError(verified.stdout[-4000:] + verified.stderr[-1000:])
-            print('PASS: integrated service verification — ' + verified.stdout.strip().splitlines()[-1])
+            # 保留真实的历史待审批与技术失败，验证脚本不能要求所有任务均已完成。
+            historical_pending=call(backend_url,'/api/tasks',pending_body,key=str(uuid4()))
+            assert historical_pending['status']=='awaiting_approval'
+            stop(finance)
+            historical_failed=call(backend_url,'/api/tasks',body,key=str(uuid4()))
+            assert historical_failed['status']=='failed' and 'receipt' not in historical_failed['result']
+            finance=launch('finance.main:app',finance_port)
+            verification_runs=[]
+            for script in ['verify_system.py','verify_system.py','verify_integration.py']:
+                verified=subprocess.run([sys.executable,str(ROOT/'scripts'/script)],
+                                        cwd=ROOT,env={**env,'BACKEND_URL':backend_url},
+                                        capture_output=True,text=True,encoding='utf-8',timeout=90)
+                if verified.returncode:
+                    raise RuntimeError(verified.stdout[-4000:] + verified.stderr[-1000:])
+                verification_runs.append({'script':script,'exit_code':verified.returncode,
+                                          'summary':verified.stdout.strip().splitlines()[-1]})
+                print(f'PASS: {script} — ' + verified.stdout.strip().splitlines()[-1])
+            for historical in [historical_pending,historical_failed]:
+                assert call(backend_url,'/api/tasks/'+historical['id'])==historical
+            tasks=call(backend_url,'/api/tasks',role='admin')
+            approval_rejected=next(task for task in tasks if task['status']=='rejected'
+                                   and task['approvals'] and task['approvals'][-1]['decision']=='reject')
+            missing_basis=next(task for task in tasks if task['status']=='awaiting_approval'
+                               and '缺少适用制度依据' in task['result'].get('manual_reasons',[]))
+            report={'recorded_at':datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(),
+                    'verification_runs':verification_runs,'historical_tasks_preserved':True,
+                    'metrics':call(backend_url,'/api/metrics',role='admin'),
+                    'scenarios':{'compliant':recovery_task,'approval_approved':done,
+                                 'approval_rejected':approval_rejected,'missing_basis_to_human':missing_basis}}
+            (ROOT/'work/smoke-summary.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+            print('PASS: repeated verification with historical pending/failed tasks, without changing their records')
+            print('PASS: four-scenario evidence saved to work/smoke-summary.json')
             print('PASS: real HTTP, unique task IDs, task lookup, persisted tasks and receipts, submit idempotency after process restart')
             print('PASS: parse snapshots, atomic amendments, initial-request replay, interrupted writeback detection and CLI reconciliation')
             print('PASS: budget samples, no budget deduction, automatic review, approval resume, budget rejection, metrics')

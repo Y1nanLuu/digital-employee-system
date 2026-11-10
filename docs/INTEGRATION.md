@@ -114,7 +114,20 @@
 3. 冻结候选基准：D4 停止新增功能，以本文件第七节全部入口作为回归门禁。
 4. 与服务端状态机的接口一致性复核：任何字段变更按 `schemas.py → docs/API.md → frontend/src/api.ts → 测试 → 现场脚本` 顺序同步。
 
-## 十、模型通道联调记录（2026-11-10，D4）
+## 十、2026-11-09 周勃 D3-05 复核补充
+
+本次以`7897aa1`加本地D3修改为基准，在Linux、Python 3.13.13下执行。上文第七节保留原集成报告的执行结果；本节记录后续复核与修复，不将不同环境的结论混为一轮。
+
+- 历史指标缺陷DF-002已复现：13笔任务仅12笔完成时，原脚本错误要求completed=total，导致42/43。现按真实任务列表核对总数、终态数、完成率和转人工率，扩展为46项；人工历史在续跑后继续统计。
+- 原重启脚本本机17/19：terminate触发Uvicorn优雅退出，工具超时先落库，未形成预期进程中断。故障注入改用强制结束测试进程，正常重启仍优雅停止，修复后19/19。
+- smoke子进程显式指定UTF-8读写，并在默认文本解码模拟为CP936的父进程中通过。此项为Linux上的编码模拟，不替代Windows实机复验。
+- 工具日志增加去除URL认证信息、查询参数与片段的endpoint，结合task_id、stage、error_code和可读原因定位预算或写回故障；旧日志字段继续兼容。
+- 后端118项通过；包含空库、四状态固定时长指标、人工等待扣除、连接/超时故障、地址脱敏、拒绝终止、并发通过及拒绝仅一次生效。
+- 同一临时库保留待审批和失败历史，连续两轮46/46，再执行51/51；历史任务内容不变。前端构建、浏览器四组业务验证通过。
+
+当前四类场景及重启恢复结果见[周勃D3验收证据](test-evidence/D3/zhoubo-20261109-summary.json)，开发过程见[周勃开发日志汇总](周勃-开发日志汇总.md)。自动生成的原始场景快照在`work/smoke-summary.json`，重启逐项结果在脚本输出目录的`summary.json`。本轮未验证PostgreSQL、Compose、Windows实机或真实LLM调用。
+
+## 十一、模型通道联调记录（2026-11-10，D4）
 
 按产品 D4 安排完成远程模型通道联调，补齐 PRD FR03（P0）要求的「至少一组真实模型调用成功证据 + 一组服务不可用降级证据」。
 
@@ -122,7 +135,7 @@
 
 | 项 | 值 |
 |---|---|
-| 通道 | `deepseek`（`base_url=https://api.deepseek.com/v1`，`model=deepseek-chat`） |
+| 通道 | `deepseek`（`base_url=https://api.deepseek.com/v1`，`model=deepseek-flash`） |
 | 密钥注入 | 环境变量 `DEEPSEEK_API_KEY`（本地存放于被 `.gitignore` 忽略的 `dsapi.txt`），密钥不入库、不入日志、不写入文档 |
 | 配置生效方式 | `AI_MODULE_ENABLED=true` + `AI_MODULE_CONFIG=<本地覆盖配置>`，仓库内 `ai-module/model_config.json` 的 `active` 保持 `local_qwen` 未改 |
 | 超时 | 实测单次调用 0.8–1.6 秒，远低于 PRD 的 120 秒上限，无需调整 `timeout_seconds` |
@@ -133,9 +146,9 @@
 
 | 检查 | 结果 |
 |---|---|
-| 提取器层：结构化报销单（8 字段） | `source=llm`、`model=deepseek-chat`、缺失 0、违规 0、耗时 1.55 s |
+| 提取器层：结构化报销单（8 字段） | `source=llm`、`model=deepseek-flash`、缺失 0、违规 0、耗时 1.55 s |
 | 提取器层：自由文本「上周出差上海，客户现场往返高铁票320元」 | 提取到 `amount=320`、`expense_type=差旅`，耗时 1.08 s，其余字段按缺失返回、不编造 |
-| 接口层：`POST /api/parse` | `mode=llm`、`source=llm`、`model=deepseek-chat`、`latency_ms≈1306`、`requires_manual_review=false`、无 `fallback_event` |
+| 接口层：`POST /api/parse` | `mode=llm`、`source=llm`、`model=deepseek-flash`、`latency_ms≈1306`、`requires_manual_review=false`、无 `fallback_event` |
 | 接口层：用模型建议创建任务 | 201，`parse_snapshot.mode=llm`，任务 `succeeded`，事件序列 `running→writing_back→succeeded` |
 
 ### 服务不可用降级证据
@@ -154,11 +167,11 @@
 
 ### 观察与遗留
 
-- 探测调用返回的 `model` 字段为 `deepseek-flash`，而配置写的是 `deepseek-chat`，属服务端别名映射；评测与冻结时以实际返回模型名为准并记录。
+- 联调初期配置写 `deepseek-chat`，服务端实际返回 `deepseek-flash`；夏一洲在 D4 把主配置与评测统一为 `deepseek-flash`，本文件对应的覆盖配置已同步，冻结版本以该模型名为准。
 - `verify_system.py` 的「指标已完成数与任务总数一致」隐含干净库假设，在已有历史任务的库上会失败（产品已指派修复）。现场执行前请重置演示库，或改用 `verify_integration.py` 的指标交叉核对。
 - 多实例并发启动时曾出现旧进程占用 8000 端口、新进程静默失败的情况；验证前先确认端口无残留监听，`GET /health` 的 `ai_enabled`/`version` 应作为第一道核对。
 
-## 十一、发票 PDF 上传与字段抽取（2026-11-10，D4）
+## 十二、发票 PDF 上传与字段抽取（2026-11-10，D4）
 
 员工端由「手写说明 → 提取建议」扩展为「上传电子发票 PDF → 抽取文本 → 提取字段 → 确认提交」，服务端新增 `POST /api/invoices`。
 
@@ -191,7 +204,7 @@
 
 本功能超出了 PRD V0.3 的原始范围（原文把 OCR 列为不纳入项），属于 D4 由用户要求追加的变更。若保留到候选版，需产品在范围内确认并同步需求文档与看板；若不保留，可整体回退本节涉及的四类改动（`invoices.py`、`/api/invoices` 路由、`invoice_id` 字段、前端上传区块）。
 
-## 十二、D4 候选基准（2026-11-10）
+## 十三、D4 候选基准（2026-11-10）
 
 D4 停止新增功能，把当日验证通过的集成版本固定为候选基准，D5 在此基础上发布候选版。
 
@@ -199,7 +212,7 @@ D4 停止新增功能，把当日验证通过的集成版本固定为候选基�
 |---|---|
 | 版本 | `0.4.0`（`APP_VERSION`），阶段标识 `D4-baseline`（`APP_STAGE`） |
 | 基准范围 | 规则业务闭环、人工审批与补正、解析快照与冲突确认、任务溯源、执行中断与受限恢复、发票 PDF 上传与字段抽取、指标口径、D4 模型通道联调 |
-| 回归门禁 | `pytest` 122 项；`smoke.py`；`verify_system.py` 43 项；`verify_integration.py` 51 项；`verify_restart.py` 19 项；`npm run build` |
+| 回归门禁 | `pytest` 131 项；`smoke.py`；`verify_system.py` 46 项；`verify_integration.py` 51 项；`verify_restart.py` 19 项；发票端到端 14 项；`npm run build` |
 | 已知未验证 | Docker Compose / PostgreSQL 链路（本机无 Docker 引擎，核查清单见 `docs/DEPLOYMENT.md` 第六节）；本地千问通道（缺 `transformers`/`torch`） |
 | 变更纪律 | 基准之后只修缺陷，不再加功能；任何接口或数据变更按 `schemas.py → docs/API.md → frontend/src/api.ts → 测试 → 现场脚本` 顺序同步 |
 

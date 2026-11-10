@@ -1,6 +1,6 @@
 """D3 重启与恢复集成校验：真实进程被杀死后的状态语义与受限恢复。
 
-覆盖三项检查（对应 D3-02「检查状态转换、账号权限和重启恢复」中的恢复部分）：
+覆盖四项检查（对应 D3-02「检查状态转换、账号权限和重启恢复」中的恢复部分）：
   1. 待审批任务跨重启保留，且审批续跑后事件序列连续、任务编号不变；
   2. 执行中的任务在进程被杀后，于下次启动被标记 failed（process_interrupted），并保留中断前状态；
   3. 受限运维按既有检查点恢复（scripts/recover_task.py retry-budget），不构造新的审核载荷；
@@ -71,9 +71,14 @@ def wait_ready(base, process, seconds=40):
     raise RuntimeError('服务启动超时')
 
 
-def stop(process):
+def stop(process, *, crash=False):
     if process and process.poll() is None:
-        process.terminate()
+        # terminate 在 POSIX 上会触发 Uvicorn 优雅退出，允许工具先超时并保存失败。
+        # 故障注入必须立即杀死测试进程，普通重启和清理仍使用优雅退出。
+        if crash:
+            process.kill()
+        else:
+            process.terminate()
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
@@ -92,6 +97,7 @@ base_env = {**os.environ,
             'FINANCE_DATABASE_URL': 'sqlite:///' + finance_db.as_posix(),
             'FINANCE_URL': finance_url,
             'FINANCE_KEY': 'local-finance-key', 'DEMO_PASSWORD': 'demo123',
+            'AI_MODULE_ENABLED': 'false',
             'PYTHONIOENCODING': 'utf-8', 'PYTHONUTF8': '1'}
 log_path = ROOT / 'work' / 'restart-services.log'
 processes = []
@@ -187,7 +193,7 @@ try:
             continue
     expect('可在中断前观测到执行中任务', interrupted is not None,
            f'等待 {round(time.monotonic() - started, 1)}s')
-    stop(hanging)  # 模拟进程被杀死
+    stop(hanging, crash=True)  # 强制中断，禁止等待工具超时后正常落库。
     worker.join(timeout=10)
     stop(backend)
     backend = launch('app.main:app', backend_port, hang_env)  # 仍指向黑洞端口，仅验证中断标记
@@ -239,6 +245,11 @@ finally:
         stop(process)
 
 failed = [item for item in results if not item[1]]
+(scratch / 'summary.json').write_text(json.dumps({
+    'recorded_at': datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(),
+    'total': len(results), 'passed': len(results) - len(failed), 'failed': len(failed),
+    'checks': [{'label': label, 'passed': passed, 'detail': detail} for label, passed, detail in results],
+}, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 print(f'\n总计 {len(results)} 项，通过 {len(results) - len(failed)} 项，失败 {len(failed)} 项')
 print(f'临时数据目录：{scratch}')
 sys.exit(1 if failed else 0)

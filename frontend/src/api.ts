@@ -24,7 +24,7 @@ export interface ParseSuggestion extends ParseSnapshot {
 }
 export interface Citation { id: string; text: string; source: string; version: string }
 export interface TaskEvent { at: string; status: TaskStatus; message: string }
-export interface ToolLog { at: string; tool: string; method: string; request: unknown; success: boolean; response?: unknown; error?: string; duration_ms: number }
+export interface ToolLog { task_id?: string; stage?: string; endpoint?: string; error_code?: string; at: string; tool: string; method: string; request: unknown; success: boolean; response?: unknown; error?: string; duration_ms: number }
 export interface Approval { reviewed_fields?: boolean; corrected_fields?: CorrectedFields | null; correction_reason?: string; at: string; actor: string; decision: 'approve' | 'reject'; comment: string; manual_basis: string }
 export interface TaskResult {
   decision?: 'approved' | 'rejected'

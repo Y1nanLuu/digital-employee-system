@@ -1,0 +1,165 @@
+{
+  "code_baseline": "296209b / APP_VERSION 0.3.0 / D3-integration",
+  "test_date": "2026-11-09",
+  "environment": "Windows 11 / Python 3.11.3 / Node 24.13.0 / Chrome 157.0.8103.38 / SQLite",
+  "results": {
+    "backend_pytest": {
+      "passed": 109,
+      "failed": 0,
+      "warning": 1
+    },
+    "ai_pytest": {
+      "passed": 30,
+      "failed": 0
+    },
+    "smoke": {
+      "passed": true,
+      "note": "需要PYTHONUTF8=1；默认命令在Windows下出现GBK解码错误"
+    },
+    "verify_system": {
+      "passed": 43,
+      "total": 43
+    },
+    "verify_integration": {
+      "passed": 51,
+      "total": 51
+    },
+    "verify_restart": {
+      "passed": 19,
+      "total": 19
+    },
+    "browser_smoke": {
+      "groups_passed": 4,
+      "groups_failed": 0
+    },
+    "frontend_build_default": {
+      "passed": false,
+      "error": "esbuild读取父目录Access is denied"
+    },
+    "frontend_build_workaround": {
+      "passed": true,
+      "command": "vite build --configLoader runner"
+    },
+    "docker_compose": {
+      "status": "未验证",
+      "reason": "当前环境无Docker"
+    },
+    "real_llm": {
+      "status": "未验证",
+      "reason": "AI_MODULE_ENABLED=false，未形成真实模型调用证据"
+    }
+  },
+  "scenarios": [
+    {
+      "name": "自动通过",
+      "task_id": "27d6a329-1dae-478b-88b3-9f4405c52455",
+      "status": "succeeded",
+      "amount": "300.00",
+      "evidence": "01-auto-pass.png"
+    },
+    {
+      "name": "人工通过并补正",
+      "task_id": "13a3a8ea-b54d-44a3-bb78-845161ca0df7",
+      "status": "succeeded",
+      "amount": "900.00",
+      "original_amount": "1500.00",
+      "evidence": "02-approval-amend.png"
+    },
+    {
+      "name": "人工拒绝",
+      "task_id": "6e2d76fe-8d66-42e6-aa56-494e3571ef21",
+      "status": "rejected",
+      "amount": "1500.00",
+      "evidence": "03-rejection.png"
+    },
+    {
+      "name": "结果未知后重试",
+      "task_id": "a55af03d-faa7-43b1-8b0d-df37cdc8ed79",
+      "status": "succeeded",
+      "amount": "200.00",
+      "evidence": "04-unknown-result-retry.png"
+    }
+  ],
+  "defects": [
+    {
+      "id": "DF-001",
+      "severity": "S2",
+      "status": "打开",
+      "title": "默认npm run build在当前深路径环境失败",
+      "owner": "张程量",
+      "d4_close": true
+    },
+    {
+      "id": "DF-002",
+      "severity": "S2",
+      "status": "打开",
+      "title": "verify_system.py包含completed==total假设",
+      "owner": "王欣茹",
+      "d4_close": true
+    },
+    {
+      "id": "DF-003",
+      "severity": "S1",
+      "status": "打开",
+      "title": "真实LLM调用与降级证据未完成",
+      "owner": "夏一洲",
+      "d4_close": true
+    },
+    {
+      "id": "DF-004",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "1e3指数金额已在浏览器/新校验中拒绝",
+      "owner": "周勃",
+      "d4_close": false
+    },
+    {
+      "id": "DF-005",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "金额300已规范化为300.00",
+      "owner": "周勃",
+      "d4_close": false
+    },
+    {
+      "id": "DF-006",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "财务失败日志已包含stage、task_id和可读原因",
+      "owner": "周勃",
+      "d4_close": false
+    },
+    {
+      "id": "DF-007",
+      "severity": "S2",
+      "status": "打开",
+      "title": "smoke.py默认Windows输出编码失败",
+      "owner": "周勃",
+      "d4_close": true
+    },
+    {
+      "id": "DF-R01",
+      "severity": "S1",
+      "status": "待真实模型复测",
+      "title": "真实模型金额截断/负号/多候选风险",
+      "owner": "夏一洲",
+      "d4_close": true
+    },
+    {
+      "id": "DF-R03",
+      "severity": "S1",
+      "status": "已关闭",
+      "title": "浏览器加载锁和审批目标绑定回归通过",
+      "owner": "王可/王丹蕊",
+      "d4_close": false
+    }
+  ],
+  "d4_blockers": [
+    "DF-003 真实LLM成功/超时/降级证据",
+    "DF-001 默认前端构建复现与修复",
+    "DF-002 verify_system干净库隔离或增量断言",
+    "DF-007 smoke.py默认UTF-8输出",
+    "Docker Compose + PostgreSQL独立部署",
+    "D4冻结前的全量回归与浏览器默认脚本可执行性"
+  ]
+}

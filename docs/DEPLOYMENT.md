@@ -127,11 +127,11 @@ cd frontend; npm.cmd run build
 | 项目 | 结果 |
 |---|---|
 | `scripts/setup.ps1` 等价步骤（venv + 后端依赖、`npm ci`） | 通过，无漏洞报告 |
-| `pytest backend/tests` | 122 项全部通过（含发票上传 13 项） |
+| `pytest backend/tests` | 131 项全部通过（含发票上传 13 项、D3 后端用例） |
 | `scripts/smoke.py` | 通过：解析快照、原子补正、初始请求重放、写回中断检测与 CLI 对账、预算样例与不扣减、审批续跑、指标 |
 | `npm run build` | 通过，产物 `dist/`（js 103.58 kB、css 13.54 kB） |
 | 本地三服务启动 | 通过：8000/8001 健康检查 200，5173 首页 200 且 `/api` 代理到 8000 |
-| `scripts/verify_system.py` | 43 项断言全部通过（六个演示步骤 + 校验、权限、幂等、指标、工具鉴权、任务编号贯穿、AI 开关状态） |
+| `scripts/verify_system.py` | 46 项断言全部通过（六个演示步骤 + 校验、权限、幂等、指标、工具鉴权、任务编号贯穿、AI 开关状态） |
 | `scripts/verify_integration.py` | 51 项断言全部通过（健康与版本、四类场景事件序列、权限矩阵、解析快照与冲突、审批补正、指标交叉核对、凭证回溯） |
 | `scripts/verify_restart.py` | 19 项断言全部通过（重启保留与续跑、幂等重放、执行中任务标记中断、受限恢复、终态拒绝） |
 | 发票 PDF 上传（端到端） | 14 项断言通过：真实模型抽取、冲突拦截、显式确认后自动通过、任务快照保留发票来源 |
@@ -161,6 +161,8 @@ docker compose down                  # 8) 停服务（不要加 -v，以免删�
 3. 三个终端分别执行 `scripts/dev.ps1 finance|backend|frontend`。
 4. 核对 `http://127.0.0.1:8000/health` 返回 `status=ok`、`version=0.4.0`；打开 `http://localhost:5173` 用 `employee/demo123` 登录。
 5. 提交一笔 300 元交通费，确认状态为「初审通过」并出现制度、预算与写回日志。
+
+2026-11-09周勃后续Linux复核：后端118项、现场脚本46项（含历史数据连续运行）、集成51项、重启恢复19项通过，前端构建和浏览器四组验证通过。上述Windows表格属于原环境记录，Windows编码修复仍需实机复验；本轮已在Linux模拟CP936默认文本解码并通过。详见[集成复核补充](INTEGRATION.md)和[验收证据](test-evidence/D3/zhoubo-20261109-summary.json)。
 
 ## 七、已知问题与常见故障
 
@@ -221,7 +223,7 @@ $env:DEEPSEEK_API_KEY = '<你的密钥>'                 # 或写入被 .gitigno
 $env:AI_MODULE_ENABLED = 'true'
 $env:AI_MODULE_CONFIG = '<本地覆盖配置路径>'          # 内容同 ai-module/model_config.json，active=deepseek
 powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 backend
-# 核对：GET /health 的 ai_enabled 应为 true；/api/parse 应返回 mode=llm、source=llm、model=deepseek-chat
+# 核对：GET /health 的 ai_enabled 应为 true；/api/parse 应返回 mode=llm、source=llm、model=deepseek-flash
 ```
 
 实测：结构化报销单 1.55 秒完成 8 字段提取、缺失 0；自由文本 1.08 秒提取金额与类别；密钥缺失或服务不可达时降级为 `rule_fallback` 并标记 `requires_manual_review`，任务转人工且保留制度与预算证据。完整记录见 `docs/INTEGRATION.md` 第十节。

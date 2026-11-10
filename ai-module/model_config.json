@@ -9,12 +9,12 @@
     "deepseek": {
       "base_url": "https://api.deepseek.com/v1",
       "api_key": "ENV:DEEPSEEK_API_KEY",
-      "model": "deepseek-chat"
+      "model": "deepseek-flash"
     },
     "glm_flash": {
-      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "base_url": "https://open.bigmodel.cn/api/coding/paas/v4",
       "api_key": "ENV:GLM_API_KEY",
-      "model": "glm-4-flash"
+      "model": "glm-5.3-flash"
     }
   },
   "timeout_seconds": 120,
