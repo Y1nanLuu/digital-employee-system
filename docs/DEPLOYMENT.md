@@ -169,3 +169,17 @@ Windows将解释器替换为`.\.venv\Scripts\python.exe`。自定义数据库或
 `smoke.py`使用临时数据库验证解析关联、字段补正、补正后原请求重放、业务中断标记和恢复CLI，运行后自动停止进程。生产数据库及密钥不应作为测试输入。
 
 可选浏览器检查见`scripts/browser_smoke.mjs`，需要单独安装测试驱动并设置浏览器路径；使用随机端口、临时数据库，自起自停服务。截图与日志存放在被Git忽略的work目录。
+
+### 可选：启用远程模型通道（DeepSeek）
+
+仓库默认通道为 `local_qwen`（需本地模型服务），也可切换到远程 API。密钥只经环境变量注入，不写入配置文件与文档：
+
+```powershell
+$env:DEEPSEEK_API_KEY = '<你的密钥>'                 # 或写入被 .gitignore 忽略的本地文件后读取
+$env:AI_MODULE_ENABLED = 'true'
+$env:AI_MODULE_CONFIG = '<本地覆盖配置路径>'          # 内容同 ai-module/model_config.json，active=deepseek
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 backend
+# 核对：GET /health 的 ai_enabled 应为 true；/api/parse 应返回 mode=llm、source=llm、model=deepseek-chat
+```
+
+实测：结构化报销单 1.55 秒完成 8 字段提取、缺失 0；自由文本 1.08 秒提取金额与类别；密钥缺失或服务不可达时降级为 `rule_fallback` 并标记 `requires_manual_review`，任务转人工且保留制度与预算证据。完整记录见 `docs/INTEGRATION.md` 第十节。

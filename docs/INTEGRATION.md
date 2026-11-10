@@ -113,3 +113,47 @@
 2. 模型通道联调：按产品 P0 完成真实调用与降级证据，固定提示词与模型配置版本。
 3. 冻结候选基准：D4 停止新增功能，以本文件第七节全部入口作为回归门禁。
 4. 与服务端状态机的接口一致性复核：任何字段变更按 `schemas.py → docs/API.md → frontend/src/api.ts → 测试 → 现场脚本` 顺序同步。
+
+## 十、模型通道联调记录（2026-11-10，D4）
+
+按产品 D4 安排完成远程模型通道联调，补齐 PRD FR03（P0）要求的「至少一组真实模型调用成功证据 + 一组服务不可用降级证据」。
+
+### 通道与配置方式
+
+| 项 | 值 |
+|---|---|
+| 通道 | `deepseek`（`base_url=https://api.deepseek.com/v1`，`model=deepseek-chat`） |
+| 密钥注入 | 环境变量 `DEEPSEEK_API_KEY`（本地存放于被 `.gitignore` 忽略的 `dsapi.txt`），密钥不入库、不入日志、不写入文档 |
+| 配置生效方式 | `AI_MODULE_ENABLED=true` + `AI_MODULE_CONFIG=<本地覆盖配置>`，仓库内 `ai-module/model_config.json` 的 `active` 保持 `local_qwen` 未改 |
+| 超时 | 实测单次调用 0.8–1.6 秒，远低于 PRD 的 120 秒上限，无需调整 `timeout_seconds` |
+
+未改仓库默认值的理由：若把 `active` 直接改成 `deepseek`，没有配置密钥的成员每次解析都会触发 `llm_api_key_missing` 降级并被标记 `requires_manual_review`，导致其演示任务全部转人工。是否把默认通道改为 `deepseek` 属于 D4-06「冻结模型配置版本」内容，需产品与 AI 负责人确认后统一提交。
+
+### 真实调用成功证据
+
+| 检查 | 结果 |
+|---|---|
+| 提取器层：结构化报销单（8 字段） | `source=llm`、`model=deepseek-chat`、缺失 0、违规 0、耗时 1.55 s |
+| 提取器层：自由文本「上周出差上海，客户现场往返高铁票320元」 | 提取到 `amount=320`、`expense_type=差旅`，耗时 1.08 s，其余字段按缺失返回、不编造 |
+| 接口层：`POST /api/parse` | `mode=llm`、`source=llm`、`model=deepseek-chat`、`latency_ms≈1306`、`requires_manual_review=false`、无 `fallback_event` |
+| 接口层：用模型建议创建任务 | 201，`parse_snapshot.mode=llm`，任务 `succeeded`，事件序列 `running→writing_back→succeeded` |
+
+### 服务不可用降级证据
+
+| 检查 | 结果 |
+|---|---|
+| `POST /api/parse`（密钥缺失，等价服务不可用） | `mode=rule_fallback`、`requires_manual_review=true`、`fallback_event.trigger=llm_api_key_missing`，业务字段仍由规则兜底给出（300.00 / 交通费） |
+| 用降级结果创建任务 | `awaiting_approval`，`result.manual_reasons=["模型处理异常，须由审批人核对字段"]`，依据与预算证据保留 |
+
+### 启用模型通道后的回归
+
+| 入口 | 结果 |
+|---|---|
+| `scripts/verify_system.py`（AI 启用） | 44 项通过（比默认模式多一条「启用AI时返回来源与结构化字段」） |
+| `scripts/verify_integration.py`（AI 启用） | 51 项通过 |
+
+### 观察与遗留
+
+- 探测调用返回的 `model` 字段为 `deepseek-flash`，而配置写的是 `deepseek-chat`，属服务端别名映射；评测与冻结时以实际返回模型名为准并记录。
+- `verify_system.py` 的「指标已完成数与任务总数一致」隐含干净库假设，在已有历史任务的库上会失败（产品已指派修复）。现场执行前请重置演示库，或改用 `verify_integration.py` 的指标交叉核对。
+- 多实例并发启动时曾出现旧进程占用 8000 端口、新进程静默失败的情况；验证前先确认端口无残留监听，`GET /health` 的 `ai_enabled`/`version` 应作为第一道核对。

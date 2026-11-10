@@ -1,4 +1,4 @@
-.venv/
+﻿.venv/
 .venv*/
 __pycache__/
 .pytest_cache/
@@ -13,3 +13,9 @@ work/
 .env.*
 !.env.example
 ai-module/outputs/
+
+# 本地模型密钥文件，禁止入库（PRD 4.2）：密钥只经环境变量注入
+dsapi.txt
+
+# Office/WPS 打开文档时生成的锁文件
+~$*
