@@ -11,6 +11,7 @@ export interface Claim {
   description: string
   confirmed: true
   parse_id?: string
+  invoice_id?: string
   conflict_acknowledged?: boolean
   confirmation_note?: string
 }
@@ -119,6 +120,46 @@ export interface ParseSnapshot {
   conflicts?: FieldConflict[]
 }
 export type CorrectedFields = Partial<Pick<Claim, 'project_id' | 'category' | 'amount' | 'expense_date' | 'description'>>
+
+export interface InvoiceMeta {
+  filename: string
+  pages: number
+  text_chars: number
+  text_preview: string
+  hints: { invoice_no?: string; expense_date?: string; invoice_title?: string }
+}
+export interface InvoiceSuggestion extends ParseSuggestion {
+  invoice_id: string
+  invoice: InvoiceMeta
+}
+
+async function readResponse<T>(response: Response): Promise<T> {
+  const text = await response.text()
+  let data: unknown = null
+  if (text) { try { data = JSON.parse(text) } catch { data = null } }
+  if (!response.ok) {
+    const detail = data && typeof data === 'object' && 'detail' in data ? (data as { detail: unknown }).detail : data
+    throw new ApiError(statusMessage(response.status, detail), response.status)
+  }
+  return data as T
+}
+
+/** 上传电子发票 PDF，返回与 /api/parse 同构的抽取建议（含 invoice_id 与发票元信息）。 */
+export async function uploadInvoice(file: File): Promise<InvoiceSuggestion> {
+  const form = new FormData()
+  form.append('file', file)
+  let response: Response
+  try {
+    response = await fetch('/api/invoices', {
+      method: 'POST',
+      headers: { Authorization: 'Basic ' + credentials },
+      body: form
+    })
+  } catch {
+    throw new Error('无法连接业务服务，请确认后端已启动后重试；已填写内容不会丢失')
+  }
+  return readResponse<InvoiceSuggestion>(response)
+}
 export interface ApprovalRequest {
   decision: 'approve' | 'reject'
   comment: string

@@ -37,6 +37,7 @@ class ClaimPayload(BaseModel):
 
 class ClaimInput(ClaimPayload):
     parse_id: UUID | None = None
+    invoice_id: UUID | None = None
     conflict_acknowledged: StrictBool = False
     confirmation_note: str = Field(default='', max_length=500)
 

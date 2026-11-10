@@ -17,8 +17,10 @@ psycopg==3.3.8
 psycopg-binary==3.3.8
 pydantic==2.14.2
 pydantic_core==2.50.2
+pypdf==7.0.0
 Pygments==2.21.0
 pytest==9.2.0
+python-multipart==0.0.33
 SQLAlchemy==2.1.8
 starlette==1.10.0
 typing-inspection==0.4.5

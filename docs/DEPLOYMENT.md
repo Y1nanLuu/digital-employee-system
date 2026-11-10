@@ -195,3 +195,13 @@ powershell -ExecutionPolicy Bypass -File scripts/dev.ps1 backend
 ```
 
 实测：结构化报销单 1.55 秒完成 8 字段提取、缺失 0；自由文本 1.08 秒提取金额与类别；密钥缺失或服务不可达时降级为 `rule_fallback` 并标记 `requires_manual_review`，任务转人工且保留制度与预算证据。完整记录见 `docs/INTEGRATION.md` 第十节。
+
+### 发票 PDF 上传（D4 新增）
+
+员工端「发票与字段核对」支持直接上传电子发票 PDF：
+
+- 依赖 `pypdf`（纯 Python，无外部二进制）与 `python-multipart`（FastAPI 表单解析），已加入 `backend/requirements.txt`；换机后按 `scripts/setup.ps1` 重装即可。
+- 只支持**带文字层的电子发票**；扫描件/图片型 PDF 会被明确拒绝并提示手工填写（OCR 不在本期范围）。
+- 文件在内存中解析、不落盘，票据内容不写日志；单文件上限 5 MB。
+- 抽取结果仅作建议，仍需员工核对并勾选确认；类别与申报值不一致时须显式确认冲突。
+- 服务端接口为 `POST /api/invoices`，契约见 `docs/API.md`。

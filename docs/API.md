@@ -9,6 +9,7 @@
 | GET | /health | 无 | 数据库连接与服务健康；返回`status`、`mode`、`version`、`stage`、`ai_enabled`、`database` |
 | GET | /api/me | 登录用户 | 当前身份和角色 |
 | POST | /api/parse | 登录用户 | 字段提取建议，返回规则、模型或降级建议及持久化解析编号 |
+| POST | /api/invoices | employee | 上传电子发票 PDF，抽取文字层后返回与 `/api/parse` 同构的字段建议 |
 | POST | /api/tasks | employee | 确认字段后创建并执行任务；必须有Idempotency-Key头 |
 | GET | /api/tasks | 登录用户 | 员工仅看本人，审批人和管理员查看全部 |
 | GET | /api/tasks/{id} | 可见任务的用户 | 任务、条款、日志和审批记录 |
@@ -76,6 +77,29 @@
 | `fallback_event` | 整体降级事件：`trigger` 取 `llm_preflight_unreachable`、`ai_config_unreadable`、`ai_module_unavailable` 或 ai-module 自身的降级原因，`fallback_to` 为 `rule_baseline` |
 
 模型侧 `expense_type` 枚举（差旅/办公用品/加班餐补/业务招待）由适配层映射为业务类别（交通费/办公用品/其他），按PRD映射：办公用品保持；差旅仅明确交通支出时为交通费，住宿、混合或不明差旅为其他；餐补和业务招待为其他。降级时业务字段仍由业务侧规则兜底，`suggested_amount` 与 `suggested_category` 不会因为模型不可用而丢失。
+
+## 发票上传与字段抽取（D4）
+
+`POST /api/invoices` 接收 `multipart/form-data`，字段名 `file`，仅限 employee。服务端只读取带**文字层**的电子发票 PDF，把文本交给与 `/api/parse` 相同的提取链路（模型或规则），响应与 `/api/parse` 同构，另加 `invoice_id` 与 `invoice` 元信息：
+
+| 字段 | 说明 |
+|---|---|
+| `invoice_id` | 本次发票抽取编号，创建任务时作为 `invoice_id` 回传，任务快照因此保留发票来源 |
+| `invoice.filename` | 原始文件名（仅保留末段，最长 120 字符） |
+| `invoice.pages` | 页数 |
+| `invoice.text_chars` | 抽取到的文本字符数 |
+| `invoice.text_preview` | 原文摘要前 200 字，供员工核对是否乱码或抽取失败 |
+| `invoice.hints` | 确定性提示：`invoice_no`、`expense_date`、`invoice_title`（从票面文字正则提取，作为模型结果的补充） |
+
+约束与边界：
+
+- 单文件上限 5 MB，只接受以 `%PDF-` 开头的文件；超出或格式不符返回 413/422。
+- **不落盘**：文件在内存中解析，票据内容不写入服务器磁盘，也不写入日志。
+- **不支持扫描件/图片型 PDF**：检测不到文字层时返回 422 并提示改用手工填写；OCR 与发票验真按 PRD 明确不在本期范围。
+- 抽取结果与申报值不一致时，沿用既有冲突闸门：须 `conflict_acknowledged=true` 且填写 `confirmation_note`，否则 422。
+- `parse_id` 与 `invoice_id` 不能同时提供（422）；`invoice_id` 必须属于当前用户，否则 422。
+
+创建请求相对 `/api/parse` 的差异：`ClaimInput` 增加可选 `invoice_id`（UUID）。带 `invoice_id` 时服务端加载该发票快照作为 `parse_snapshot`，并把它写入 `submission_payload`，供审批与审计追溯。
 
 ## 任务对象响应字段
 
