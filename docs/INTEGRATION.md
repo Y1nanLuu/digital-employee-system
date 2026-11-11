@@ -6,8 +6,8 @@
 
 | 项 | 值 |
 |---|---|
-| 应用版本 | `0.4.0`（`APP_VERSION`，可用同名环境变量覆盖） |
-| 阶段标识 | `D4-baseline`（`APP_STAGE`） |
+| 应用版本 | `0.5.0`（`APP_VERSION`，可用同名环境变量覆盖） |
+| 阶段标识 | `D5-candidate`（`APP_STAGE`） |
 | 代码基线 | 拉取 `origin/master` 至 `296209b`（含周勃「任务快照、审批补正与故障恢复」、王丹蕊审批与指标、测试证据与产品 D3 归档） |
 | 数据库结构 | `create_all` + 自建增量升级（`backend/app/migrations.py`），升级前自动备份 `.bak` |
 | 健康检查 | `GET /health` 返回 `status`、`mode`、`version`、`stage`、`ai_enabled`、`database`，用于现场确认运行版本与依赖状态 |

@@ -12,8 +12,8 @@
 | POST | /api/invoices | employee | 上传电子发票 PDF，抽取文字层后返回与 `/api/parse` 同构的字段建议 |
 | POST | /api/tasks | employee | 确认字段后创建并执行任务；必须有Idempotency-Key头 |
 | GET | /api/tasks | 登录用户 | 员工仅看本人，审批人和管理员查看全部 |
-| GET | /api/tasks/{id} | 可见任务的用户 | 任务、条款、日志和审批记录 |
-| POST | /api/tasks/{id}/approval | approver | 待审批任务通过或拒绝；禁止自审与重复处理 |
+| GET | /api/tasks/{task_id} | 可见任务的用户 | 任务、条款、日志和审批记录 |
+| POST | /api/tasks/{task_id}/approval | approver | 待审批任务通过或拒绝；禁止自审与重复处理 |
 | GET | /api/metrics | approver/admin | 全量演示数据统计 |
 
 ## 字段约束
@@ -39,7 +39,7 @@
 
 提交、列表、详情和审批接口统一使用`TaskResponse`响应模型。每笔新申请的`id`为UUID v4，数据库以此作为主键；`payload`保存确认字段，`status`为下文状态枚举，`result`保存处理结果，`citations`、`logs`、`events`和`approvals`分别保存依据、工具日志、状态事件与审批记录。另含`owner`、`created_at`、可为空的`finished_at`及`manual`字段。内部提交标识`request_key`不对外返回。
 
-任务先生成编号并写入数据库，再同步执行规则及财务工具；工具失败仍保留同一编号和失败日志。`GET /api/tasks/{id}`可查询已完成、待审批和失败任务。员工仅可查询自己的记录，查询不存在或不可见的任务均返回404。进程重启后可继续查询已提交的记录；相同标识和内容的重试仍返回原任务，不重复执行财务调用。
+任务先生成编号并写入数据库，再同步执行规则及财务工具；工具失败仍保留同一编号和失败日志。`GET /api/tasks/{task_id}`可查询已完成、待审批和失败任务。员工仅可查询自己的记录，查询不存在或不可见的任务均返回404。进程重启后可继续查询已提交的记录；相同标识和内容的重试仍返回原任务，不重复执行财务调用。
 
 审批请求（`ApprovalInput`）：
 
@@ -103,7 +103,7 @@
 
 ## 任务对象响应字段
 
-`GET /api/tasks`、`GET /api/tasks/{id}`、创建与审批响应返回同一结构：
+`GET /api/tasks`、`GET /api/tasks/{task_id}`、创建与审批响应返回同一结构：
 
 | 字段 | 说明 |
 |---|---|

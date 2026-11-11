@@ -129,6 +129,18 @@ Compose 模式使用命名卷，重置需 `docker compose down` 后删除 `postg
 
 新增`parse_snapshots`表：id、owner、description_hash（SHA-256）、snapshot、created_at。编号按当前身份及去首尾空白后的说明绑定；不设置短期失效，不保存认证信息。
 
+### 表 `parse_snapshots`
+
+| 列 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| `id` | String(36) | 主键 | 解析编号；`/api/parse` 与 `/api/invoices` 共用，创建任务时作 `parse_id`/`invoice_id` 回传 |
+| `owner` | String(40) | 非空，建索引 | 解析发起人；创建任务时校验归属，防止跨账号复用 |
+| `description_hash` | String(64) | 非空 | 说明文本（或发票抽取文本）的 SHA-256，用于确认输入未变 |
+| `snapshot` | JSON | 非空 | 完整解析结果：`mode`、`suggested_amount`、`suggested_category`、`fields`、`violations`、`fallback_event`、`parse_id`、`latency_ms`；发票来源另含 `invoice`（文件名、页数、字符数、原文摘要、票面提示） |
+| `created_at` | String(40) | 非空 | 解析时间（UTC ISO） |
+
+发票上传与文本解析共用该表：发票记录的 `snapshot.invoice` 存在时，创建请求可携带 `invoice_id`；两者互斥，且都必须属于当前用户。
+
 `tasks`增加JSON字段`submission_payload`、`parse_snapshot`、`confirmations`、`amendments`、`pending_writeback`，以及可空VARCHAR(40)字段`failure_stage`。初始请求不可被补正改写；当前payload与变更审计原子提交。待写回载荷先于外部副作用持久化，且不对外暴露。
 
 升级是追加式：通过检查列存在性避免重复ALTER，新字段为对象/列表的空默认值。旧记录回填规范化初始请求，原payload表示完整保存在`confirmations.original_payload`中；旧数据只标注legacy_backfill，不推断不存在的模型调用证据。已有任务编号、状态、幂等键、日志和凭证不删除。再次启动不重复回填。

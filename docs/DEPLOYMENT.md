@@ -37,8 +37,8 @@
 | `AI_MODULE_ENABLED` | `false` | 业务后端 | 字段提取是否走 ai-module 模型通道；关闭时使用内置规则基线 |
 | `AI_MODULE_CONFIG` | `ai-module/model_config.json` | 业务后端 | 模型通道配置路径，切换 `active` 即可换通道（deepseek/local_qwen/rule） |
 | `AI_PYTHON` | 系统 `python` | `scripts/dev.ps1 ai` | 启动本地模型服务所用解释器，需含 `transformers`/`torch` |
-| `APP_VERSION` | `0.4.0` | 业务后端 | 集成版本号，经 `GET /health` 暴露，便于验收确认运行版本 |
-| `APP_STAGE` | `D4-baseline` | 业务后端 | 阶段标识，与版本号一并用于现场核对 |
+| `APP_VERSION` | `0.5.0` | 业务后端 | 集成版本号，经 `GET /health` 暴露，便于验收确认运行版本 |
+| `APP_STAGE` | `D5-candidate` | 业务后端 | 阶段标识，与版本号一并用于现场核对 |
 
 约定：
 
@@ -120,7 +120,7 @@ cd frontend; npm.cmd run build
 
 四个脚本的分工：`smoke.py` 与 `verify_restart.py` 自起自停临时服务，可作为提交前门禁；`verify_system.py` 校验标准端口上真实运行的整套服务（六个演示步骤）；`verify_integration.py` 校验跨模块集成面。集成版本与实测汇总见 `docs/INTEGRATION.md`。
 
-## 六、实测结果（D4 基准 0.4.0）
+## 六、实测结果（D5 候选版 0.5.0）
 
 在 Windows 11 + Python 3.14.7 + Node 26.8.1 上执行，代码基线为 D4 冻结日的 `master`；运行版本可从 `GET /health` 的 `version`/`stage` 字段确认。
 
@@ -146,7 +146,7 @@ docker compose config                # 1) 校验编排文件与变量展开
 docker compose build                 # 2) 构建 backend/frontend 镜像（含 pypdf 依赖）
 docker compose up -d                 # 3) 启动四服务
 docker compose ps                    # 4) 四个容器应为 healthy
-curl.exe http://127.0.0.1:8000/health    # 5) 应返回 status=ok、database=postgresql、version=0.4.0
+curl.exe http://127.0.0.1:8000/health    # 5) 应返回 status=ok、database=postgresql、version=0.5.0
 curl.exe http://127.0.0.1:8080/          # 6) 前端应能打开（nginx 代理 /api）
 # 7) 走一遍六步演示（见 README），确认 PostgreSQL 上的迁移、审批续跑与指标
 docker compose down                  # 8) 停服务（不要加 -v，以免删数据卷）
@@ -222,7 +222,7 @@ COMPOSE_AI_MODULE_ENABLED=false   # 默认关闭；容器内没有 ai-module，�
 1. 复制或克隆仓库到新目录，确认没有 `.venv/`、`frontend/node_modules/`、`backend/data/`、`.env`、`dsapi.txt`。
 2. `powershell -ExecutionPolicy Bypass -File scripts/setup.ps1`（需要网络）。
 3. 三个终端分别执行 `scripts/dev.ps1 finance|backend|frontend`。
-4. 核对 `http://127.0.0.1:8000/health` 返回 `status=ok`、`version=0.4.0`；打开 `http://localhost:5173` 用 `employee/demo123` 登录。
+4. 核对 `http://127.0.0.1:8000/health` 返回 `status=ok`、`version=0.5.0`；打开 `http://localhost:5173` 用 `employee/demo123` 登录。
 5. 提交一笔 300 元交通费，确认状态为「初审通过」并出现制度、预算与写回日志。
 
 2026-11-09周勃后续Linux复核：后端118项、现场脚本46项（含历史数据连续运行）、集成51项、重启恢复19项通过，前端构建和浏览器四组验证通过。上述Windows表格属于原环境记录，Windows编码修复仍需实机复验；本轮已在Linux模拟CP936默认文本解码并通过。详见[集成复核补充](INTEGRATION.md)和[验收证据](test-evidence/D3/zhoubo-20261109-summary.json)。
