@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-12",
+  "timezone": "Asia/Shanghai",
+  "code_baseline": "4fafb20",
+  "environment": "isolated .venv-audit; Python 3.11.15; pinned backend dependencies",
+  "existing_backend_ai_regression": {
+    "passed": 210,
+    "failed": 0,
+    "warnings": 1,
+    "seconds": 18.54
+  },
+  "additional_probes": {
+    "total": 4,
+    "passed": 0,
+    "failed": 4,
+    "observations": {
+      "failed_withdraw": {
+        "expected_http": 409,
+        "actual_http": 200,
+        "actual_status": "cancelled",
+        "original_stage": "budget_query"
+      },
+      "old_original_access": {
+        "expected_approver_http": 200,
+        "actual_approver_http": 404,
+        "actual_owner_http": 200,
+        "revisions": 2
+      },
+      "approval_recovery": {
+        "expected_status": "succeeded",
+        "actual_status": "awaiting_approval",
+        "approval_count": 1,
+        "writebacks": 0,
+        "manual_reasons": [
+          "模拟台账未知，请人工核对票据"
+        ]
+      },
+      "recovery_revision_audit": {
+        "expected_revision_status": "succeeded",
+        "actual_revision_status": "failed",
+        "actual_task_status": "succeeded",
+        "task_has_receipt": true,
+        "revision_has_receipt": false
+      }
+    }
+  },
+  "scope": "Real business and finance FastAPI TestClient APIs, isolated SQLite/files, stubbed model review and controlled transport faults. No production data changed.",
+  "not_verified": [
+    "real LLM calls",
+    "PostgreSQL/Compose on this host",
+    "real browser final workflow"
+  ],
+  "reproduce": ".venv-audit/bin/python -m pytest -c backend/pytest.ini docs/test-evidence/backend-review-20261112/probes.py -q --tb=short",
+  "findings": [
+    {
+      "id": "BE-20261112-01",
+      "requirement": "AC59",
+      "summary": "failed task withdrawal succeeds although PRD/API list only returned/awaiting_approval",
+      "source": "backend/app/main.py:402"
+    },
+    {
+      "id": "BE-20261112-02",
+      "requirement": "FR13 historical originals and authorized access",
+      "summary": "Approver loses access to prior original after replacement and resubmission; owner retains access",
+      "source": "backend/app/files.py:30"
+    },
+    {
+      "id": "BE-20261112-03",
+      "requirement": "FR09 same-task checkpoint recovery",
+      "summary": "Enterprise budget recovery restarts initial review rather than continuing persisted human approval",
+      "source": "backend/app/services.py:251"
+    },
+    {
+      "id": "BE-20261112-04",
+      "requirement": "FR10/FR15 current revision audit consistency",
+      "summary": "Successful writeback reconciliation does not refresh current revision review_record",
+      "source": "backend/app/services.py:238"
+    }
+  ],
+  "documentation_gaps": [
+    {
+      "location": "docs/API.md:14",
+      "documented": "request_id / submission_payload",
+      "actual": "Idempotency-Key header and flat ClaimInput fields"
+    },
+    {
+      "location": "docs/API.md:40",
+      "documented": "completed_rate",
+      "actual": "completion_rate"
+    }
+  ]
+}

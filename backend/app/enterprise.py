@@ -129,9 +129,17 @@ def approve(task,request,user,db):
         task.result={**task.result,'return_reason':request.comment,'returned_at':at}
         services.event(task,'returned','审批退回，请员工修改后重新提交',actor=user['username'],reason=request.comment);db.commit();return
     services.event(task,'running','人工决定已记录，继续核对工具',actor=user['username']);db.commit()
-    if request.decision=='reject':services.write_result(task,'rejected',request.comment,db);return
+    finish_approval(task,record,db)
+
+
+def finish_approval(task,request,db):
+    """Continue a persisted decision without recording another approval or wait."""
+    from . import services
     try:
+        if request['decision']=='reject':
+            services.write_result(task,'rejected',request['comment'],db)
+            return
         findings=checks(task,db)
         if findings['hard']:services.write_result(task,'rejected','；'.join(x['message'] for x in findings['hard']),db)
-        else:services.write_result(task,'approved',request.comment,db)
+        else:services.write_result(task,'approved',request['comment'],db)
     except services.ToolFailure as exc:services.fail(task,str(exc),exc.stage,db)
