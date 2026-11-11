@@ -52,6 +52,22 @@ cd frontend; npm.cmd run build                                                  
 
 `git checkout <上一候选版提交>` 后重建镜像或重启服务；数据库结构只做追加式升级，回滚代码不会破坏已有表结构（升级前的 SQLite 备份见 `migrations.py` 的 `.bak` 机制）。
 
+## 候选版 v0.5.0 enterprise-review（2026-11-11 合并远端企业版工作流后）
+
+合并远端 `a4b07d8` 后，候选版在原 D5 基础上纳入企业报销工作流，阶段标识改为 `enterprise-review`。
+
+| 项 | 值 |
+|---|---|
+| 应用版本 / 阶段 | `0.5.0` / `enterprise-review`（`GET /health` 可核对） |
+| 新增接口 | `GET /api/policy`、`GET /api/files/{file_id}`、`GET /api/files/{file_id}/content`、`POST /api/batches`、`GET /api/batches`、`PUT /api/batches/{batch_id}/items/{index}`、`POST /api/tasks/{task_id}/resubmit`、`POST /api/tasks/{task_id}/withdraw` |
+| 发票识别 | 由文本层抽取升级为**本地 OCR**（`pypdfium2` + `Pillow` + `rapidocr-onnxruntime`），原件落盘于 `FILE_STORAGE_DIR`（容器内 `/app/data/invoices`，独立数据卷） |
+| 制度版本 | `ACTIVE_POLICY_VERSION=enterprise-demo-v2`，可用 `ENTERPRISE_POLICY_FILE` 指定自定义制度 JSON |
+| 基础镜像 | `python:3.11-slim-bookworm`（固定 Debian 12，避免 trixie 的 `libglib2.0-0` 改名导致构建失败） |
+| 运行约束 | 本地开发需 Python 3.11/3.12（`rapidocr-onnxruntime` 不支持 3.13+）；容器内为 Python 3.11 |
+| 部署验证 | 四容器 healthy；PostgreSQL 上接口断言与增量升级通过；干净目录独立部署通过 |
+
+回滚提示：本次合并同时带来前后端与文档的大幅变更，如需回到 D4 基准，回退到 `22d4fc6` 即可；数据库为追加式升级，回退代码不会破坏已有表结构。
+
 ## 候选版 v0.4.0（2026-11-10，D4 基准，历史记录）
 
 D4 基准为 `0.4.0` / `D4-baseline`，验证项与门禁数字见 `docs/INTEGRATION.md` 第十三节；本节仅作历史保留，不再作为发布依据。

@@ -50,4 +50,15 @@ Linux/macOS创建.venv并安装同一requirements；导出下述环境变量，�
 
 Docker正常运行后执行docker compose config --quiet、docker compose up -d --build，访问http://127.0.0.1:8080。业务使用PostgreSQL，票据、财务SQLite及PostgreSQL各有持久卷；ai-module只读挂载。启用COMPOSE_AI_MODULE_ENABLED=true和密钥可调用配置模型。
 
-当前电脑WSL2虚拟化环境未就绪，Docker后台无法运行；本轮仅完成Compose静态配置检查，未完成容器及PostgreSQL实机验收。此项须在支持环境补测重启、数据卷和模型可达性，不将其标记为已通过。避免docker compose down -v删除数据卷。
+2026-11-11 已在有 Docker 的环境完成容器与 PostgreSQL 实机验收（此前“未就绪、仅静态检查”的结论作废，保留原文以记录过程）：
+
+- 本机 Docker Desktop 需先启动；`github.com` 与 Docker Hub 在国内网络常不可达，镜像加速器写入 `~/.docker/daemon.json` 的 `registry-mirrors`（本次用 `docker.m.daocloud.io`、`dockerproxy.net`），该文件必须是 **UTF-8 无 BOM**，否则 Docker 启动报 `parsing daemon.json: invalid character 'ï'`。
+- 四容器 `db/finance/backend/frontend` 全部 healthy；`GET /health` 返回 `database=postgresql`、`version=0.5.0`、`stage=enterprise-review`；`http://127.0.0.1:8080` 可访问。
+- 在容器化 PostgreSQL 上：`pytest`（除本机 Python 版本限制项）、`verify_system.py` 46 项、`verify_integration.py` 51 项、增量升级（删列后重启自动补齐）、发票上传（本地 OCR 依赖已随镜像安装）均通过。
+- 干净目录独立部署：用 `git worktree` 从候选版提交导出（无 `.venv`、无 `.env`、无密钥），在该目录内 `docker compose up -d --build` 成功并跑通门禁。
+
+### 本地依赖与版本约束
+
+- 后端依赖含本地 OCR：`pypdfium2`、`Pillow`、`rapidocr-onnxruntime`。其中 **`rapidocr-onnxruntime` 要求 Python < 3.13**，因此本地开发机请用 Python 3.11/3.12；Python 3.14 只能跑除 OCR 之外的用例（本轮本机为 3.14，OCR 用例改在容器内验证）。
+- 后端镜像基础镜像已固定为 `python:3.11-slim-bookworm`；`python:3.11-slim` 现已指向 Debian 13，`libglib2.0-0` 改名会导致系统库安装失败。
+- 若构建时容器内无法访问 `deb.debian.org`，可传 `--build-arg APT_MIRROR=mirrors.aliyun.com` 切换 apt 源，默认仍为官方源。避免docker compose down -v删除数据卷。
