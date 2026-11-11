@@ -61,7 +61,7 @@ today = datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat()
 
 def claim(**changes):
     body = {'project_id': 'P001', 'category': '交通费', 'amount': '300.00', 'expense_date': today,
-            'description': '客户现场往返交通费300元', 'confirmed': True}
+            'description': '客户现场往返交通费300元', 'confirmed': True, 'department': '市场部'}
     body.update(changes)
     return body
 

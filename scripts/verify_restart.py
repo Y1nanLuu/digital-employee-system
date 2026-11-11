@@ -98,6 +98,9 @@ base_env = {**os.environ,
             'FINANCE_URL': finance_url,
             'FINANCE_KEY': 'local-finance-key', 'DEMO_PASSWORD': 'demo123',
             'AI_MODULE_ENABLED': 'false',
+            # 本脚本验证的是规则基线（demo-v1）下的重启与恢复语义；
+            # 企业版（enterprise-demo-v2）要求先上传票据原件，另行验证。
+            'ACTIVE_POLICY_VERSION': 'demo-v1',
             'PYTHONIOENCODING': 'utf-8', 'PYTHONUTF8': '1'}
 log_path = ROOT / 'work' / 'restart-services.log'
 processes = []

@@ -13,7 +13,11 @@ services:
       timeout: 3s
       retries: 15
   finance:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        # 某些网络访问 deb.debian.org 会被拒，可设置 APT_MIRROR=mirrors.aliyun.com
+        APT_MIRROR: ${APT_MIRROR:-}
     command: ["uvicorn", "finance.main:app", "--host", "0.0.0.0", "--port", "8001"]
     environment:
       FINANCE_KEY: ${FINANCE_KEY:-local-finance-key}
@@ -27,7 +31,11 @@ services:
       timeout: 3s
       retries: 15
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        # 某些网络访问 deb.debian.org 会被拒，可设置 APT_MIRROR=mirrors.aliyun.com
+        APT_MIRROR: ${APT_MIRROR:-}
     environment:
       DATABASE_URL: postgresql+psycopg://employee:${POSTGRES_PASSWORD:-local-postgres-password}@db:5432/employee
       FINANCE_URL: http://finance:8001

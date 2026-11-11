@@ -57,7 +57,8 @@ def status_of(base, path, body=None, role='employee', key=None):
 
 today = datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat()
 base_body = {'project_id': 'P001', 'category': '交通费', 'amount': '300.00',
-             'expense_date': today, 'description': '客户现场往返交通费300元', 'confirmed': True}
+             'expense_date': today, 'description': '客户现场往返交通费300元', 'confirmed': True,
+             'department': '市场部'}
 
 # 0. 健康检查与身份
 code, health = call(BACKEND, '/health', role=None)

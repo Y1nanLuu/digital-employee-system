@@ -64,7 +64,10 @@ cd frontend; npm.cmd run build                                                  
 | 制度版本 | `ACTIVE_POLICY_VERSION=enterprise-demo-v2`，可用 `ENTERPRISE_POLICY_FILE` 指定自定义制度 JSON |
 | 基础镜像 | `python:3.11-slim-bookworm`（固定 Debian 12，避免 trixie 的 `libglib2.0-0` 改名导致构建失败） |
 | 运行约束 | 本地开发需 Python 3.11/3.12（`rapidocr-onnxruntime` 不支持 3.13+）；容器内为 Python 3.11 |
-| 部署验证 | 四容器 healthy；PostgreSQL 上接口断言与增量升级通过；干净目录独立部署通过 |
+| 部署验证 | 四容器 healthy（`database=postgresql`、`version=0.5.0`、`stage=enterprise-review`、`active_policy=enterprise-demo-v2`）；增量升级与发票上传通过；干净目录独立部署通过 |
+| 容器内门禁 | Python 3.11 镜像内 `pytest` **180 项通过**；`verify_enterprise_rules.py` **198/198**；企业版端到端（policy→上传→建单→审批）**5/5** |
+| 规则基线门禁 | `smoke.py` 通过（内含 `verify_integration.py` 51 项）；`verify_restart.py` 19 项；`verify_system.py` / `verify_integration.py` 需 `ACTIVE_POLICY_VERSION=demo-v1`，企业版下需先上传票据 |
+| 前端构建 | 通过（新增收件、复核、文件查看组件，js 128.65 kB） |
 
 回滚提示：本次合并同时带来前后端与文档的大幅变更，如需回到 D4 基准，回退到 `22d4fc6` 即可；数据库为追加式升级，回退代码不会破坏已有表结构。
 
