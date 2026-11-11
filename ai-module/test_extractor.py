@@ -53,7 +53,7 @@ def test_rule_extract_complete_slip():
     f = r["fields"]
     assert f["submitter"] == "张伟"
     assert f["department"] == "研发部"
-    assert f["expense_type"] == "差旅"
+    assert f["expense_type"] == "交通费"
     assert f["amount"] == 3275.0
     assert f["expense_date"] == "2026-10-12"
     assert f["invoice_no"] == "26310100001234567890"
@@ -143,10 +143,10 @@ def test_validate_field_values_keeps_legal_values():
     from datetime import date, timedelta
     today_cn = date.today().isoformat()  # 测试环境为东八区，与生产时区一致即可覆盖语义
     sanitized, violations = validate_field_values({
-        "amount": 300.0, "expense_type": "差旅",
+        "amount": 300.0, "expense_type": "交通费",
         "expense_date": today_cn, "submitter": "张伟"})
     assert sanitized["amount"] == 300.0
-    assert sanitized["expense_type"] == "差旅"
+    assert sanitized["expense_type"] == "交通费"
     assert sanitized["expense_date"] == today_cn
     assert violations == []
 
@@ -180,11 +180,20 @@ def test_rule_missing_fields_detected():
 
 
 def test_rule_expense_type_mapping():
-    for text, want in [("费用类型：业务招待", "业务招待"),
-                       ("费用类型：加班餐补", "加班餐补"),
-                       ("费用类型：办公用品", "办公用品")]:
+    """企业版九类（enterprise-demo-v2）：KV 直填与关键词自由文本均映射到业务枚举。"""
+    kv_cases = [("费用类型：交通费", "交通费"), ("费用类型：住宿费", "住宿费"),
+                ("费用类型：业务招待费", "业务招待费"), ("费用类型：办公用品", "办公用品"),
+                ("费用类型：通讯费", "通讯费"), ("费用类型：培训会议费", "培训会议费"),
+                ("费用类型：软件服务费", "软件服务费"), ("费用类型：出差餐补", "出差餐补"),
+                ("费用类型：其他", "其他"),
+                # 旧名兼容：按关键词归入最接近的新类别
+                ("费用类型：差旅", "交通费"), ("费用类型：业务招待", "业务招待费"),
+                ("费用类型：加班餐补", "出差餐补")]
+    for text, want in kv_cases:
         got = RuleExtractor().extract(text)["fields"]["expense_type"]
         assert got == want, f"{text} → {got}"
+    # 自由文本类别推断属适配层职责（validation.category_for），
+    # L1 规则仅识别键值对形式，故此处不测自由文本。
 
 
 # ---- 降级路径 -------------------------------------------------------------
@@ -363,7 +372,7 @@ def test_all_sample_slips_meet_expectations():
         "样例2": lambda r: r["fields"]["amount"] == 6820.5,
         "样例3": lambda r: r["fields"]["invoice_title"] == "王强",
         "样例4": lambda r: "invoice_no" in r["missing_fields"],
-        "样例5": lambda r: r["fields"]["expense_type"] == "业务招待",
+        "样例5": lambda r: r["fields"]["expense_type"] == "业务招待费",
     }
     for name, body in samples.items():
         r = RuleExtractor().extract(body)

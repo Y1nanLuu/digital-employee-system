@@ -51,7 +51,8 @@ def test_extraction_keeps_complete_money_boundaries(text, expected):
 
 
 @pytest.mark.parametrize('text,expected', [
-    ('差旅住宿费用300元', '其他'), ('差旅高铁票300元', '交通费'),
+    ('差旅住宿费用300元', '住宿费'),  # 企业版九类: 明确住宿信号判住宿费(旧三类时代无此类归其他)
+    ('差旅高铁票300元', '交通费'),
     ('高铁票和酒店共300元', '其他'), ('差旅费用300元', '其他'),
 ])
 def test_travel_mapping_depends_on_expense_content(text, expected):

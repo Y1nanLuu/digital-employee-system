@@ -1,0 +1,525 @@
+{
+  "results": [
+    {
+      "id": "PDF-01",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100001234567890",
+          "got": "26310100001234567890",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-03",
+          "got": "2026-11-03",
+          "ok": true
+        },
+        "buyer": {
+          "want": "Beijing Zhongxing XieLi Technology Co Ltd",
+          "got": "BeijingZhongxingXieLiTechnologyCoLtd",
+          "ok": true
+        },
+        "seller": {
+          "want": "Shanghai Hotel Co Ltd",
+          "got": "ShanghaiHotelCoLtd",
+          "ok": true
+        },
+        "total": {
+          "want": "520.00",
+          "got": "520.00",
+          "ok": true
+        },
+        "item_name": {
+          "want": "*Lodging* Hotel room",
+          "got": "Item: *Lodging* Hotel room",
+          "ok": true
+        },
+        "category": {
+          "want": "其他",
+          "got": "其他",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "pdf_text"
+    },
+    {
+      "id": "PDF-02",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000987654321",
+          "got": "26310100000987654321",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-02",
+          "got": "2026-11-02",
+          "ok": true
+        },
+        "buyer": {
+          "want": "Beijing Zhongxing XieLi Technology Co Ltd",
+          "got": "BeijingZhongxingXieLiTechnologyCoLtd",
+          "ok": true
+        },
+        "seller": {
+          "want": "China Railway 12306",
+          "got": "ChinaRailway12306",
+          "ok": true
+        },
+        "total": {
+          "want": "448.00",
+          "got": "448.00",
+          "ok": true
+        },
+        "item_name": {
+          "want": "*Transport* Railway ticket",
+          "got": "Item: *Transport* Railway ticket",
+          "ok": true
+        },
+        "category": {
+          "want": "交通费",
+          "got": "交通费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "pdf_text"
+    },
+    {
+      "id": "PDF-03",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000111222333",
+          "got": "26310100000111222333",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-10-28",
+          "got": "2026-10-28",
+          "ok": true
+        },
+        "buyer": {
+          "want": "Beijing Zhongxing XieLi Technology Co Ltd",
+          "got": "BeijingZhongxingXieLiTechnologyCoLtd",
+          "ok": true
+        },
+        "seller": {
+          "want": "Cloud Service Provider",
+          "got": "CloudServiceProvider",
+          "ok": true
+        },
+        "total": {
+          "want": "980.00",
+          "got": "980.00",
+          "ok": true
+        },
+        "item_name": {
+          "want": "*ITService* Cloud API",
+          "got": "Item: *ITService* Cloud API",
+          "ok": true
+        },
+        "category": {
+          "want": "软件服务费",
+          "got": "软件服务费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "pdf_text"
+    },
+    {
+      "id": "PDF-04",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000444555666",
+          "got": "26310100000444555666",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-05",
+          "got": "2026-11-05",
+          "ok": true
+        },
+        "buyer": {
+          "want": "Beijing Zhongxing XieLi Technology Co Ltd",
+          "got": "BeijingZhongxingXieLiTechnologyCoLtd",
+          "ok": true
+        },
+        "seller": {
+          "want": "City Taxi Company",
+          "got": "CityTaxiCompany",
+          "ok": true
+        },
+        "total": {
+          "want": "76.50",
+          "got": "76.50",
+          "ok": true
+        },
+        "item_name": {
+          "want": "*Transport* Taxi fare",
+          "got": "Item: *Transport* Taxi fare",
+          "ok": true
+        },
+        "category": {
+          "want": "交通费",
+          "got": "交通费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "pdf_text"
+    },
+    {
+      "id": "PDF-05",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000555666777",
+          "got": "26310100000555666777",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-01",
+          "got": "2026-11-01",
+          "ok": true
+        },
+        "buyer": {
+          "want": "Beijing Zhongxing XieLi Technology Co Ltd",
+          "got": "BeijingZhongxingXieLiTechnologyCoLtd",
+          "ok": true
+        },
+        "seller": {
+          "want": "Software Vendor Ltd",
+          "got": "SoftwareVendorLtd",
+          "ok": true
+        },
+        "total": {
+          "want": "2400.00",
+          "got": "2400.00",
+          "ok": true
+        },
+        "item_name": {
+          "want": "*ITService* Software subscription",
+          "got": "Item: *ITService* Software subscription",
+          "ok": true
+        },
+        "category": {
+          "want": "软件服务费",
+          "got": "软件服务费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "pdf_text"
+    },
+    {
+      "id": "IMG-01",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100001234567890",
+          "got": "26310100001234567890",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-03",
+          "got": "2026-11-03",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "520.00",
+          "got": "520.00",
+          "ok": true
+        },
+        "category": {
+          "want": "住宿费",
+          "got": "住宿费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-02",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000987654321",
+          "got": "26310100000987654321",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-02",
+          "got": "2026-11-02",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "448.00",
+          "got": "448.00",
+          "ok": true
+        },
+        "category": {
+          "want": "交通费",
+          "got": "交通费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-03",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000111222333",
+          "got": "26310100000111222333",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-05",
+          "got": "2026-11-05",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "1020.00",
+          "got": "1020.00",
+          "ok": true
+        },
+        "category": {
+          "want": "其他",
+          "got": "其他",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-04",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000444555666",
+          "got": "26310100000444555666",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-10-28",
+          "got": "2026-10-28",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "980.00",
+          "got": "980.00",
+          "ok": true
+        },
+        "category": {
+          "want": "软件服务费",
+          "got": "软件服务费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-05",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000555666777",
+          "got": "26310100000555666777",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-01",
+          "got": "2026-11-01",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "1200.00",
+          "got": "1200.00",
+          "ok": true
+        },
+        "category": {
+          "want": "培训会议费",
+          "got": "培训会议费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-06",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000666777888",
+          "got": "26310100000666777888",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-10-26",
+          "got": "2026-10-26",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "286.00",
+          "got": "286.00",
+          "ok": true
+        },
+        "category": {
+          "want": "办公用品",
+          "got": "办公用品",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-07",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100000777888999",
+          "got": "26310100000777888999",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-10-31",
+          "got": "2026-10-31",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "100.00",
+          "got": "100.00",
+          "ok": true
+        },
+        "category": {
+          "want": "通讯费",
+          "got": "通讯费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    },
+    {
+      "id": "IMG-08",
+      "checks": {
+        "invoice_no": {
+          "want": "26310100002113224334",
+          "got": "26310100002113224334",
+          "ok": true
+        },
+        "invoice_date": {
+          "want": "2026-11-09",
+          "got": "2026-11-09",
+          "ok": true
+        },
+        "buyer": {
+          "want": "示例科技有限公司",
+          "got": "示例科技有限公司",
+          "ok": true
+        },
+        "total": {
+          "want": "350.00",
+          "got": "350.00",
+          "ok": true
+        },
+        "category": {
+          "want": "软件服务费",
+          "got": "软件服务费",
+          "ok": true
+        }
+      },
+      "passed": true,
+      "read_method": "ocr"
+    }
+  ],
+  "gates": [
+    {
+      "case": "GATE-01 一票一文件",
+      "ok": true,
+      "got": "multiple_invoices"
+    },
+    {
+      "case": "GATE-02 非发票文件",
+      "ok": true,
+      "got": "not_invoice"
+    },
+    {
+      "case": "GATE-03 损坏文件",
+      "ok": true,
+      "got": "unreadable_pdf"
+    }
+  ],
+  "summary": {
+    "total": 13,
+    "passed": 13,
+    "fields": {
+      "invoice_no": [
+        13,
+        13
+      ],
+      "invoice_date": [
+        13,
+        13
+      ],
+      "buyer": [
+        13,
+        13
+      ],
+      "seller": [
+        5,
+        5
+      ],
+      "total": [
+        13,
+        13
+      ],
+      "item_name": [
+        5,
+        5
+      ],
+      "category": [
+        13,
+        13
+      ]
+    },
+    "methods": {
+      "pdf_text": 5,
+      "ocr": 8
+    }
+  }
+}

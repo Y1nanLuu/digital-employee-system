@@ -6,8 +6,6 @@ from zoneinfo import ZoneInfo
 
 MONEY = re.compile(r'[0-9]+(?:\.[0-9]{1,2})?\Z')
 NUMBER = re.compile(r'(?<![0-9A-Za-z_.,+\-])([+\-]?\d[\d,]*(?:\.\d+)?(?:[eE][+\-]?\d+)?)(?![0-9A-Za-z_.,])')
-TRANSPORT = re.compile(r'交通|车票|机票|高铁|火车|地铁|公交|出租车|打车')
-LODGING = re.compile(r'住宿|酒店|宾馆|房费')
 
 
 def money_value(value):
@@ -45,22 +43,42 @@ def date_input(value):
     return value
 
 
+CATEGORIES = ('交通费', '住宿费', '业务招待费', '办公用品', '通讯费',
+              '培训会议费', '软件服务费', '出差餐补', '其他')
+# demo-v1 时代 AI 枚举旧名 → 企业版九类语义就近归入
+_LEGACY_CATEGORY = {'差旅': '交通费', '加班餐补': '出差餐补', '业务招待': '业务招待费'}
+# 类别关键词信号（与 ai-module/extractor._TYPE_RULES 口径一致；
+# 泛差旅词不作为信号，仅在无具体信号时归"其他"）
+_CATEGORY_SIGNALS = (
+    (re.compile(r'住宿|酒店|宾馆|房费|民宿'), '住宿费'),
+    (re.compile(r'餐补|出差餐|餐饮补贴'), '出差餐补'),
+    (re.compile(r'招待|宴请|接待|餐饮|餐费'), '业务招待费'),
+    (re.compile(r'话费|通讯|流量|宽带'), '通讯费'),
+    (re.compile(r'培训|会议|报名|峰会|研讨'), '培训会议费'),
+    (re.compile(r'软件|云服务|API|订阅|技术服务'), '软件服务费'),
+    (re.compile(r'办公|采购|打印|文具|墨盒|复印|硒鼓|白板'), '办公用品'),
+    (re.compile(r'交通|车票|机票|高铁|火车|地铁|公交|出租|打车|网约|客运|运输|联程|轮渡'), '交通费'),
+)
+
+
 def category_for(description, expense_type=None):
-    if expense_type in ['加班餐补', '业务招待']:
+    """费用类别判定：提取值（九类）优先，旧名就近归入，否则按说明关键词推断。
+
+    多类别信号混合或仅有泛差旅词时返回"其他"（转人工核对，不猜测）。
+    """
+    if expense_type in CATEGORIES:
+        return expense_type
+    if expense_type in ('加班餐补', '业务招待'):
+        # 旧名但语义明确，直接归入新类别
+        return _LEGACY_CATEGORY[expense_type]
+    # expense_type 为 None 或含糊旧名（'差旅'）时，交由说明信号细分
+    specific = {name for pattern, name in _CATEGORY_SIGNALS if pattern.search(description)}
+    if len(specific) > 1:
         return '其他'
-    transport = bool(TRANSPORT.search(description))
-    lodging = bool(LODGING.search(description))
-    office = '办公用品' in description or expense_type == '办公用品'
-    other = bool(re.search(r'餐饮|餐补|招待', description))
-    if sum([transport, lodging or other, office]) > 1:
-        return '其他'
-    if lodging or other:
-        return '其他'
-    if transport:
-        return '交通费'
-    if office:
-        return '办公用品'
-    if expense_type in ['差旅', '加班餐补', '业务招待'] or '差旅' in description:
+    if len(specific) == 1:
+        return next(iter(specific))
+    if re.search(r'差旅|出差', description) or expense_type == '差旅':
+        # 仅泛差旅词（或含糊旧名'差旅'）且无具体信号：无法细分交通/住宿，转人工
         return '其他'
     return None
 
