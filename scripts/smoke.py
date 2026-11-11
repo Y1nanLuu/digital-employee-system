@@ -61,7 +61,7 @@ with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='smoke-',ignore_cleanup_
          'FINANCE_DATABASE_URL':'sqlite:///'+(temp/'finance.db').as_posix(),
          'FINANCE_URL':finance_url,
          'FINANCE_KEY':'local-finance-key','DEMO_PASSWORD':'demo123','AI_MODULE_ENABLED':'false',
-         'PYTHONIOENCODING':'utf-8','PYTHONUTF8':'1'}
+         'PYTHONIOENCODING':'utf-8','PYTHONUTF8':'1','ACTIVE_POLICY_VERSION':'demo-v1'}
     processes=[]
     with (ROOT/'work/smoke-services.log').open('w',encoding='utf8') as log:
         def launch(module,selected_port):

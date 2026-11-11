@@ -11,7 +11,7 @@ Set-Location $projectRoot
 # terminal wins: .env never overwrites it.
 if (Test-Path '.env') {
     foreach ($line in Get-Content -Encoding utf8 '.env') {
-        if ($line -match '^\s*(DEMO_PASSWORD|FINANCE_KEY|POSTGRES_PASSWORD|AI_MODULE_ENABLED|AI_MODULE_CONFIG|DEEPSEEK_API_KEY|GLM_API_KEY|AI_PYTHON)=(.*)$') {
+        if ($line -match '^\s*(DEMO_PASSWORD|FINANCE_KEY|POSTGRES_PASSWORD|AI_MODULE_ENABLED|AI_MODULE_CONFIG|DEEPSEEK_API_KEY|GLM_API_KEY|AI_PYTHON|COMPANY_TITLE|FILE_STORAGE_DIR|ACTIVE_POLICY_VERSION|ENTERPRISE_POLICY_FILE)=(.*)$') {
             $name = $matches[1]
             $value = $matches[2].Trim()
             if ($value -and -not [Environment]::GetEnvironmentVariable($name, 'Process')) {

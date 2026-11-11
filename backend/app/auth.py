@@ -5,7 +5,7 @@ from .config import DEMO_PASSWORD
 
 security = HTTPBasic()
 USERS = {
-    'employee': {'username': 'employee', 'name': '演示员工', 'role': 'employee'},
+    'employee': {'username': 'employee', 'name': '演示员工', 'role': 'employee', 'employee_no':'E001', 'department': '研发部', 'grade': 'staff'},
     'approver': {'username': 'approver', 'name': '演示审批人', 'role': 'approver'},
     'admin': {'username': 'admin', 'name': '演示管理员', 'role': 'admin'},
 }

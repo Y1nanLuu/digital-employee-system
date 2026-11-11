@@ -7,7 +7,7 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import select
 
-from finance.schemas import BudgetResponse, ResultInput, ResultResponse
+from finance.schemas import BudgetResponse, ResultInput, ResultResponse,EnterpriseResultResponse
 from . import config
 from .knowledge import retrieve
 from .models import Task
@@ -19,9 +19,11 @@ def now():
 
 
 def event(task, status, message, **details):
+    previous=task.status
     task.status = status
     task.events = [*task.events, {'at': now(), 'task_id': task.id,
-                                 'status': status, 'message': message, **details}]
+                                 'from':previous,'status': status, 'message': message,
+                                 'actor':'system','revision':task.revision,**details}]
 
 
 def citations_for(category):
@@ -39,6 +41,7 @@ def tool(task, method, path, body=None, *, response_model, expected, stage):
     address = urlsplit(config.FINANCE_URL + path)
     endpoint = urlunsplit((address.scheme, address.netloc.rsplit('@', 1)[-1], address.path, '', ''))
     record = {'at': now(), 'task_id': task.id, 'stage': stage,
+              'revision':task.revision,
               'tool': path.split('?', 1)[0].split('#', 1)[0], 'endpoint': endpoint,
               'method': method, 'request': body}
     try:
@@ -72,6 +75,15 @@ def tool(task, method, path, body=None, *, response_model, expected, stage):
 
 def write_result(task, decision, reason, db):
     payload = {'task_id': task.id, 'decision': decision, 'reason': reason}
+    enterprise = task.policy_version != 'demo-v1'
+    if enterprise:
+        invoice=task.payload.get('invoice') or {}
+        taxable=task.payload['category']!='出差餐补'
+        payload.update(invoice_no=invoice.get('invoice_no','') if taxable else '',invoice_code=invoice.get('invoice_code','') if taxable else '',
+                       owner=task.owner,amount=task.payload['amount'],expense_date=task.payload['expense_date'])
+        from .models import InvoiceFile
+        source=db.get(InvoiceFile,str(task.payload.get('file_id')))
+        payload['file_sha256']=source.digest if source and taxable else ''
     if task.pending_writeback and task.pending_writeback != payload:
         raise HTTPException(409, '已有待确认的写回内容，禁止更换审核决定')
     task.result = {**task.result, 'decision': decision, 'reason': reason, 'execution_stage': 'writeback'}
@@ -81,7 +93,8 @@ def write_result(task, decision, reason, db):
     task.pending_writeback = payload
     event(task, 'writing_back', '审核决定已保存，等待模拟财务凭证确认')
     db.commit()  # 副作用发生前保存原编号、决定和规范化载荷。
-    receipt = tool(task, 'POST', '/results', payload, response_model=ResultResponse,
+    receipt = tool(task, 'POST', '/reviews/results' if enterprise else '/results', payload,
+                   response_model=EnterpriseResultResponse if enterprise else ResultResponse,
                    expected=payload, stage='writeback')
     task.result = {**task.result, 'receipt': receipt}
     task.result.pop('error', None)
@@ -90,6 +103,9 @@ def write_result(task, decision, reason, db):
     task.failure_stage = None
     event(task, 'succeeded' if decision == 'approved' else 'rejected', reason)
     task.finished_at = now()
+    if enterprise and decision=='rejected':
+        from .models import InvoiceClaim
+        for row in db.scalars(select(InvoiceClaim).where(InvoiceClaim.task_id==task.id)):db.delete(row)
     db.commit()
 
 
@@ -115,6 +131,10 @@ def fail(task, message, stage, db, code=None):
 
 
 def execute(task, db):
+    if task.policy_version!='demo-v1':
+        from .enterprise import execute as execute_enterprise,record_revision
+        try:return execute_enterprise(task,db)
+        finally:record_revision(task,db)
     try:
         task.failure_stage = None
         task.finished_at = None
@@ -157,6 +177,12 @@ def finish_approval(task, request, db):
 
 
 def approve(task, request, user, db):
+    if task.policy_version!='demo-v1':
+        from .enterprise import approve as approve_enterprise,record_revision
+        try:return approve_enterprise(task,request,user,db)
+        finally:record_revision(task,db)
+    if request.decision=='return':
+        raise HTTPException(422,'历史制度申请仅支持原有审批，请使用新版本申请')
     # 所有422校验先完成；在此之前不改变任务、等待时间、有效字段或审批记录。
     corrected = request.corrected_fields.model_dump(mode='json', exclude_unset=True) if request.corrected_fields else {}
     previous_citations = task.citations
@@ -216,14 +242,17 @@ def recover(task, action, actor, reason, db):
             fail(task, str(exc), exc.stage, db)
     elif action == 'retry-budget':
         if (task.pending_writeback or task.result.get('receipt')
-                or task.failure_stage not in ['initial_review', 'budget_query']):
+                or task.failure_stage not in ['initial_review', 'budget_query', 'invoice_check', 'duplicate_check','file_validation']):
             raise HTTPException(409, '仅可恢复已确认尚未发生写回的预算查询阶段')
         task.finished_at = None
         task.failure_stage = None
         task.result = {key: value for key, value in task.result.items() if key not in ['error', 'error_code']}
         event(task, 'running', '受限运维恢复预算查询', actor=actor, reason=reason)
         db.commit()
-        if task.approvals:
+        if task.policy_version!='demo-v1':
+            from .enterprise import execute as execute_enterprise
+            execute_enterprise(task,db)
+        elif task.approvals:
             finish_approval(task, task.approvals[-1], db)
         else:
             execute(task, db)
@@ -231,8 +260,17 @@ def recover(task, action, actor, reason, db):
         raise HTTPException(422, '不支持的恢复操作')
 
 
-def serialize(task):
-    keys = ['id', 'owner', 'status', 'payload', 'result', 'citations', 'logs', 'events',
+def serialize(task,viewer=None):
+    keys = ['id', 'business_no', 'owner', 'status', 'payload', 'result', 'citations', 'logs', 'events',
             'approvals', 'created_at', 'finished_at', 'manual', 'submission_payload',
-            'parse_snapshot', 'confirmations', 'amendments', 'failure_stage']
-    return {key: getattr(task, key) for key in keys}
+            'parse_snapshot', 'confirmations', 'amendments', 'failure_stage','policy_version','revision','return_draft']
+    result={key: getattr(task, key) for key in keys}
+    result['payload']=ClaimPayload.model_validate(task.payload).model_dump(mode='json')
+    if not viewer or viewer.get('username')!=task.owner:result['return_draft']={}
+    from sqlalchemy.orm import object_session
+    from .models import TaskRevision
+    db=object_session(task)
+    result['revisions']=[{**{key:getattr(row,key) for key in ['number','actor','reason','payload','before','created_at']},
+                         'snapshot':{k:v for k,v in row.snapshot.items() if k!='_resubmit_request'}}
+                         for row in db.scalars(select(TaskRevision).where(TaskRevision.task_id==task.id).order_by(TaskRevision.number))] if db else []
+    return result
