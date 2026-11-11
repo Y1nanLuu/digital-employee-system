@@ -1,0 +1,1138 @@
+{
+  "tasks": [
+    {
+      "id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+      "owner": "employee",
+      "request_key": "3b0770df-28e0-4bab-a967-88e1a22337cb",
+      "status": "succeeded",
+      "payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "300.00",
+        "expense_date": "2026-11-10",
+        "description": "客户现场交通费500元",
+        "confirmed": true
+      },
+      "result": {
+        "mode": "structured_input",
+        "execution_stage": "writeback",
+        "budget": {
+          "project_id": "P001",
+          "available": "10000.00",
+          "currency": "CNY",
+          "simulated": true
+        },
+        "manual_reasons": [],
+        "decision": "approved",
+        "reason": "金额、制度和预算校验通过",
+        "receipt": {
+          "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "decision": "approved",
+          "reason": "金额、制度和预算校验通过",
+          "receipt_id": "demo-0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "simulated": true
+        }
+      },
+      "citations": [
+        {
+          "id": "DEMO-01",
+          "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:10.874598+00:00"
+        },
+        {
+          "id": "DEMO-02",
+          "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:10.874598+00:00"
+        },
+        {
+          "id": "DEMO-03",
+          "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:10.874598+00:00"
+        },
+        {
+          "id": "DEMO-04",
+          "text": "申请金额不得超过项目可用预算。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:10.874598+00:00"
+        },
+        {
+          "id": "DEMO-05",
+          "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:10.874598+00:00"
+        }
+      ],
+      "logs": [
+        {
+          "at": "2026-11-10T11:56:10.882619+00:00",
+          "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "stage": "budget_query",
+          "tool": "/budgets/P001",
+          "endpoint": "http://127.0.0.1:53961/budgets/P001",
+          "method": "GET",
+          "request": null,
+          "success": true,
+          "response": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "duration_ms": 40.55
+        },
+        {
+          "at": "2026-11-10T11:56:10.937068+00:00",
+          "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "stage": "writeback",
+          "tool": "/results",
+          "endpoint": "http://127.0.0.1:53961/results",
+          "method": "POST",
+          "request": {
+            "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+            "decision": "approved",
+            "reason": "金额、制度和预算校验通过"
+          },
+          "success": true,
+          "response": {
+            "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+            "decision": "approved",
+            "reason": "金额、制度和预算校验通过",
+            "receipt_id": "demo-0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+            "simulated": true
+          },
+          "duration_ms": 20.64
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-10T11:56:10.874598+00:00",
+          "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "status": "running",
+          "message": "按确认字段、有效制度与预算执行初审"
+        },
+        {
+          "at": "2026-11-10T11:56:10.931121+00:00",
+          "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "status": "writing_back",
+          "message": "审核决定已保存，等待模拟财务凭证确认"
+        },
+        {
+          "at": "2026-11-10T11:56:10.958092+00:00",
+          "task_id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+          "status": "succeeded",
+          "message": "金额、制度和预算校验通过"
+        }
+      ],
+      "approvals": [],
+      "created_at": "2026-11-10T11:56:10.866576+00:00",
+      "finished_at": "2026-11-10T11:56:10.958092+00:00",
+      "approval_started_at": null,
+      "wait_seconds": 0.0,
+      "manual": 0,
+      "submission_payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "300.00",
+        "expense_date": "2026-11-10",
+        "description": "客户现场交通费500元",
+        "confirmed": true,
+        "parse_id": null,
+        "conflict_acknowledged": true,
+        "confirmation_note": "其中200元属于其他项目，本次仅申报300元"
+      },
+      "parse_snapshot": {
+        "mode": "structured_input",
+        "suggested_amount": "500.00",
+        "suggested_category": "交通费",
+        "amount_candidates": [
+          {
+            "raw": "500",
+            "amount": "500.00",
+            "valid": true
+          }
+        ],
+        "conflicts": [],
+        "requires_manual_review": false,
+        "requires_confirmation": true,
+        "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+        "source": "structured_input"
+      },
+      "confirmations": [
+        {
+          "at": "2026-11-10T11:56:10.866576+00:00",
+          "actor": "employee",
+          "confirmed": true,
+          "conflicts": [
+            {
+              "field": "amount",
+              "reason": "说明金额与申报金额不一致"
+            },
+            {
+              "field": "amount",
+              "reason": "提取建议金额与申报金额不一致"
+            }
+          ],
+          "conflict_acknowledged": true,
+          "note": "其中200元属于其他项目，本次仅申报300元",
+          "final_fields": {
+            "project_id": "P001",
+            "category": "交通费",
+            "amount": "300.00",
+            "expense_date": "2026-11-10",
+            "description": "客户现场交通费500元",
+            "confirmed": true
+          }
+        }
+      ],
+      "amendments": [],
+      "pending_writeback": "{}",
+      "failure_stage": null
+    },
+    {
+      "id": "fc75b566-4e81-44a8-b224-0941c520520b",
+      "owner": "employee",
+      "request_key": "649c51b2-1b87-4cf6-b57b-78a3f3dbac30",
+      "status": "succeeded",
+      "payload": {
+        "project_id": "P001",
+        "category": "办公用品",
+        "amount": "900.00",
+        "expense_date": "2026-11-10",
+        "description": "客户现场采购办公用品1500元",
+        "confirmed": true
+      },
+      "result": {
+        "mode": "rule_baseline",
+        "execution_stage": "writeback",
+        "budget": {
+          "project_id": "P001",
+          "available": "10000.00",
+          "currency": "CNY",
+          "simulated": true
+        },
+        "manual_reasons": [
+          "金额超过1000元"
+        ],
+        "reason": "已核对原始说明及金额",
+        "decision": "approved",
+        "receipt": {
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "decision": "approved",
+          "reason": "已核对原始说明及金额",
+          "receipt_id": "demo-fc75b566-4e81-44a8-b224-0941c520520b",
+          "simulated": true
+        }
+      },
+      "citations": [
+        {
+          "id": "DEMO-01",
+          "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+        },
+        {
+          "id": "DEMO-02",
+          "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+        },
+        {
+          "id": "DEMO-03",
+          "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+        },
+        {
+          "id": "DEMO-04",
+          "text": "申请金额不得超过项目可用预算。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+        },
+        {
+          "id": "DEMO-05",
+          "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+        }
+      ],
+      "logs": [
+        {
+          "at": "2026-11-10T11:56:11.083035+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "stage": "budget_query",
+          "tool": "/budgets/P001",
+          "endpoint": "http://127.0.0.1:53961/budgets/P001",
+          "method": "GET",
+          "request": null,
+          "success": true,
+          "response": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "duration_ms": 10.83
+        },
+        {
+          "at": "2026-11-10T11:56:11.652692+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "stage": "budget_query",
+          "tool": "/budgets/P001",
+          "endpoint": "http://127.0.0.1:53961/budgets/P001",
+          "method": "GET",
+          "request": null,
+          "success": true,
+          "response": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "duration_ms": 20.75
+        },
+        {
+          "at": "2026-11-10T11:56:11.689242+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "stage": "writeback",
+          "tool": "/results",
+          "endpoint": "http://127.0.0.1:53961/results",
+          "method": "POST",
+          "request": {
+            "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+            "decision": "approved",
+            "reason": "已核对原始说明及金额"
+          },
+          "success": true,
+          "response": {
+            "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+            "decision": "approved",
+            "reason": "已核对原始说明及金额",
+            "receipt_id": "demo-fc75b566-4e81-44a8-b224-0941c520520b",
+            "simulated": true
+          },
+          "duration_ms": 19.11
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-10T11:56:11.075015+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "status": "running",
+          "message": "按确认字段、有效制度与预算执行初审"
+        },
+        {
+          "at": "2026-11-10T11:56:11.101607+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "status": "awaiting_approval",
+          "message": "金额超过1000元"
+        },
+        {
+          "at": "2026-11-10T11:56:11.644669+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "status": "running",
+          "message": "人工核对已提交，沿原任务继续硬规则校验"
+        },
+        {
+          "at": "2026-11-10T11:56:11.682224+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "status": "writing_back",
+          "message": "审核决定已保存，等待模拟财务凭证确认"
+        },
+        {
+          "at": "2026-11-10T11:56:11.708294+00:00",
+          "task_id": "fc75b566-4e81-44a8-b224-0941c520520b",
+          "status": "succeeded",
+          "message": "已核对原始说明及金额"
+        }
+      ],
+      "approvals": [
+        {
+          "at": "2026-11-10T11:56:11.643667+00:00",
+          "actor": "approver",
+          "decision": "approve",
+          "comment": "已核对原始说明及金额",
+          "manual_basis": "",
+          "corrected_fields": {
+            "project_id": null,
+            "category": null,
+            "amount": "900.00",
+            "expense_date": null,
+            "description": null
+          },
+          "correction_reason": "扣除个人承担部分",
+          "reviewed_fields": true,
+          "citations_before": [
+            {
+              "id": "DEMO-01",
+              "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.075015+00:00"
+            },
+            {
+              "id": "DEMO-02",
+              "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.075015+00:00"
+            },
+            {
+              "id": "DEMO-03",
+              "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.075015+00:00"
+            },
+            {
+              "id": "DEMO-04",
+              "text": "申请金额不得超过项目可用预算。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.075015+00:00"
+            },
+            {
+              "id": "DEMO-05",
+              "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.075015+00:00"
+            }
+          ],
+          "citations_after": [
+            {
+              "id": "DEMO-01",
+              "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+            },
+            {
+              "id": "DEMO-02",
+              "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+            },
+            {
+              "id": "DEMO-03",
+              "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+            },
+            {
+              "id": "DEMO-04",
+              "text": "申请金额不得超过项目可用预算。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+            },
+            {
+              "id": "DEMO-05",
+              "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.643667+00:00"
+            }
+          ]
+        }
+      ],
+      "created_at": "2026-11-10T11:56:11.067996+00:00",
+      "finished_at": "2026-11-10T11:56:11.708294+00:00",
+      "approval_started_at": "2026-11-10T11:56:11.101607+00:00",
+      "wait_seconds": 0.54206,
+      "manual": 1,
+      "submission_payload": {
+        "project_id": "P001",
+        "category": "办公用品",
+        "amount": "1500.00",
+        "expense_date": "2026-11-10",
+        "description": "客户现场采购办公用品1500元",
+        "confirmed": true,
+        "parse_id": "03219cbb-0c5a-41de-a6bf-e9fee1fbd8ba",
+        "conflict_acknowledged": false,
+        "confirmation_note": ""
+      },
+      "parse_snapshot": {
+        "mode": "rule_baseline",
+        "suggested_amount": "1500.00",
+        "suggested_category": "办公用品",
+        "amount_candidates": [
+          {
+            "raw": "1500",
+            "amount": "1500.00",
+            "valid": true
+          }
+        ],
+        "conflicts": [],
+        "requires_manual_review": false,
+        "requires_confirmation": true,
+        "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+        "ai_enabled": false,
+        "parse_id": "03219cbb-0c5a-41de-a6bf-e9fee1fbd8ba",
+        "latency_ms": 0.1
+      },
+      "confirmations": [
+        {
+          "at": "2026-11-10T11:56:11.067996+00:00",
+          "actor": "employee",
+          "confirmed": true,
+          "conflicts": [],
+          "conflict_acknowledged": false,
+          "note": "",
+          "final_fields": {
+            "project_id": "P001",
+            "category": "办公用品",
+            "amount": "1500.00",
+            "expense_date": "2026-11-10",
+            "description": "客户现场采购办公用品1500元",
+            "confirmed": true
+          }
+        }
+      ],
+      "amendments": [
+        {
+          "at": "2026-11-10T11:56:11.643667+00:00",
+          "actor": "approver",
+          "reason": "扣除个人承担部分",
+          "before": {
+            "amount": "1500.00"
+          },
+          "after": {
+            "amount": "900.00"
+          }
+        }
+      ],
+      "pending_writeback": "{}",
+      "failure_stage": null
+    },
+    {
+      "id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+      "owner": "employee",
+      "request_key": "browser-d3-reject",
+      "status": "rejected",
+      "payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "1500.00",
+        "expense_date": "2026-11-10",
+        "description": "客户拜访往返交通费1500元",
+        "confirmed": true
+      },
+      "result": {
+        "mode": "structured_input",
+        "execution_stage": "writeback",
+        "budget": {
+          "project_id": "P001",
+          "available": "10000.00",
+          "currency": "CNY",
+          "simulated": true
+        },
+        "manual_reasons": [
+          "金额超过1000元"
+        ],
+        "reason": "票据不全，本次拒绝",
+        "decision": "rejected",
+        "receipt": {
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "decision": "rejected",
+          "reason": "票据不全，本次拒绝",
+          "receipt_id": "demo-fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "simulated": true
+        }
+      },
+      "citations": [
+        {
+          "id": "DEMO-01",
+          "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+        },
+        {
+          "id": "DEMO-02",
+          "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+        },
+        {
+          "id": "DEMO-03",
+          "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+        },
+        {
+          "id": "DEMO-04",
+          "text": "申请金额不得超过项目可用预算。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+        },
+        {
+          "id": "DEMO-05",
+          "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+        }
+      ],
+      "logs": [
+        {
+          "at": "2026-11-10T11:56:11.745861+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "stage": "budget_query",
+          "tool": "/budgets/P001",
+          "endpoint": "http://127.0.0.1:53961/budgets/P001",
+          "method": "GET",
+          "request": null,
+          "success": true,
+          "response": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "duration_ms": 7.92
+        },
+        {
+          "at": "2026-11-10T11:56:11.839784+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "stage": "writeback",
+          "tool": "/results",
+          "endpoint": "http://127.0.0.1:53961/results",
+          "method": "POST",
+          "request": {
+            "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+            "decision": "rejected",
+            "reason": "票据不全，本次拒绝"
+          },
+          "success": true,
+          "response": {
+            "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+            "decision": "rejected",
+            "reason": "票据不全，本次拒绝",
+            "receipt_id": "demo-fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+            "simulated": true
+          },
+          "duration_ms": 18.44
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-10T11:56:11.737839+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "status": "running",
+          "message": "按确认字段、有效制度与预算执行初审"
+        },
+        {
+          "at": "2026-11-10T11:56:11.762110+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "status": "awaiting_approval",
+          "message": "金额超过1000元"
+        },
+        {
+          "at": "2026-11-10T11:56:11.823741+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "status": "running",
+          "message": "人工核对已提交，沿原任务继续硬规则校验"
+        },
+        {
+          "at": "2026-11-10T11:56:11.831761+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "status": "writing_back",
+          "message": "审核决定已保存，等待模拟财务凭证确认"
+        },
+        {
+          "at": "2026-11-10T11:56:11.858337+00:00",
+          "task_id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+          "status": "rejected",
+          "message": "票据不全，本次拒绝"
+        }
+      ],
+      "approvals": [
+        {
+          "at": "2026-11-10T11:56:11.823741+00:00",
+          "actor": "approver",
+          "decision": "reject",
+          "comment": "票据不全，本次拒绝",
+          "manual_basis": "",
+          "corrected_fields": null,
+          "correction_reason": "",
+          "reviewed_fields": false,
+          "citations_before": [
+            {
+              "id": "DEMO-01",
+              "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-02",
+              "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-03",
+              "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-04",
+              "text": "申请金额不得超过项目可用预算。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-05",
+              "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            }
+          ],
+          "citations_after": [
+            {
+              "id": "DEMO-01",
+              "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-02",
+              "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-03",
+              "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-04",
+              "text": "申请金额不得超过项目可用预算。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            },
+            {
+              "id": "DEMO-05",
+              "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+              "source": "模拟费用报销制度",
+              "version": "demo-v1",
+              "retrieved_at": "2026-11-10T11:56:11.737839+00:00"
+            }
+          ]
+        }
+      ],
+      "created_at": "2026-11-10T11:56:11.730295+00:00",
+      "finished_at": "2026-11-10T11:56:11.858337+00:00",
+      "approval_started_at": "2026-11-10T11:56:11.762110+00:00",
+      "wait_seconds": 0.061631,
+      "manual": 1,
+      "submission_payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "1500.00",
+        "expense_date": "2026-11-10",
+        "description": "客户拜访往返交通费1500元",
+        "confirmed": true,
+        "parse_id": null,
+        "conflict_acknowledged": false,
+        "confirmation_note": ""
+      },
+      "parse_snapshot": {
+        "mode": "structured_input",
+        "suggested_amount": "1500.00",
+        "suggested_category": "交通费",
+        "amount_candidates": [
+          {
+            "raw": "1500",
+            "amount": "1500.00",
+            "valid": true
+          }
+        ],
+        "conflicts": [],
+        "requires_manual_review": false,
+        "requires_confirmation": true,
+        "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+        "source": "structured_input"
+      },
+      "confirmations": [
+        {
+          "at": "2026-11-10T11:56:11.730295+00:00",
+          "actor": "employee",
+          "confirmed": true,
+          "conflicts": [],
+          "conflict_acknowledged": false,
+          "note": "",
+          "final_fields": {
+            "project_id": "P001",
+            "category": "交通费",
+            "amount": "1500.00",
+            "expense_date": "2026-11-10",
+            "description": "客户拜访往返交通费1500元",
+            "confirmed": true
+          }
+        }
+      ],
+      "amendments": [],
+      "pending_writeback": "{}",
+      "failure_stage": null
+    },
+    {
+      "id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+      "owner": "employee",
+      "request_key": "c8cc6d31-7bac-49f7-9bda-d1707983c10d",
+      "status": "succeeded",
+      "payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "200.00",
+        "expense_date": "2026-11-10",
+        "description": "客户现场交通费200元",
+        "confirmed": true
+      },
+      "result": {
+        "mode": "structured_input",
+        "execution_stage": "writeback",
+        "budget": {
+          "project_id": "P001",
+          "available": "10000.00",
+          "currency": "CNY",
+          "simulated": true
+        },
+        "manual_reasons": [],
+        "decision": "approved",
+        "reason": "金额、制度和预算校验通过",
+        "receipt": {
+          "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+          "decision": "approved",
+          "reason": "金额、制度和预算校验通过",
+          "receipt_id": "demo-f6e38e9d-c270-4569-8059-505a64cb792c",
+          "simulated": true
+        }
+      },
+      "citations": [
+        {
+          "id": "DEMO-01",
+          "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.985203+00:00"
+        },
+        {
+          "id": "DEMO-02",
+          "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.985203+00:00"
+        },
+        {
+          "id": "DEMO-03",
+          "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.985203+00:00"
+        },
+        {
+          "id": "DEMO-04",
+          "text": "申请金额不得超过项目可用预算。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.985203+00:00"
+        },
+        {
+          "id": "DEMO-05",
+          "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:11.985203+00:00"
+        }
+      ],
+      "logs": [
+        {
+          "at": "2026-11-10T11:56:11.992221+00:00",
+          "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+          "stage": "budget_query",
+          "tool": "/budgets/P001",
+          "endpoint": "http://127.0.0.1:53961/budgets/P001",
+          "method": "GET",
+          "request": null,
+          "success": true,
+          "response": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "duration_ms": 19.05
+        },
+        {
+          "at": "2026-11-10T11:56:12.026791+00:00",
+          "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+          "stage": "writeback",
+          "tool": "/results",
+          "endpoint": "http://127.0.0.1:53961/results",
+          "method": "POST",
+          "request": {
+            "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+            "decision": "approved",
+            "reason": "金额、制度和预算校验通过"
+          },
+          "success": true,
+          "response": {
+            "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+            "decision": "approved",
+            "reason": "金额、制度和预算校验通过",
+            "receipt_id": "demo-f6e38e9d-c270-4569-8059-505a64cb792c",
+            "simulated": true
+          },
+          "duration_ms": 16.49
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-10T11:56:11.985203+00:00",
+          "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+          "status": "running",
+          "message": "按确认字段、有效制度与预算执行初审"
+        },
+        {
+          "at": "2026-11-10T11:56:12.018616+00:00",
+          "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+          "status": "writing_back",
+          "message": "审核决定已保存，等待模拟财务凭证确认"
+        },
+        {
+          "at": "2026-11-10T11:56:12.043615+00:00",
+          "task_id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+          "status": "succeeded",
+          "message": "金额、制度和预算校验通过"
+        }
+      ],
+      "approvals": [],
+      "created_at": "2026-11-10T11:56:11.977182+00:00",
+      "finished_at": "2026-11-10T11:56:12.043615+00:00",
+      "approval_started_at": null,
+      "wait_seconds": 0.0,
+      "manual": 0,
+      "submission_payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "200.00",
+        "expense_date": "2026-11-10",
+        "description": "客户现场交通费200元",
+        "confirmed": true,
+        "parse_id": null,
+        "conflict_acknowledged": false,
+        "confirmation_note": ""
+      },
+      "parse_snapshot": {
+        "mode": "structured_input",
+        "suggested_amount": "200.00",
+        "suggested_category": "交通费",
+        "amount_candidates": [
+          {
+            "raw": "200",
+            "amount": "200.00",
+            "valid": true
+          }
+        ],
+        "conflicts": [],
+        "requires_manual_review": false,
+        "requires_confirmation": true,
+        "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+        "source": "structured_input"
+      },
+      "confirmations": [
+        {
+          "at": "2026-11-10T11:56:11.977182+00:00",
+          "actor": "employee",
+          "confirmed": true,
+          "conflicts": [],
+          "conflict_acknowledged": false,
+          "note": "",
+          "final_fields": {
+            "project_id": "P001",
+            "category": "交通费",
+            "amount": "200.00",
+            "expense_date": "2026-11-10",
+            "description": "客户现场交通费200元",
+            "confirmed": true
+          }
+        }
+      ],
+      "amendments": [],
+      "pending_writeback": "{}",
+      "failure_stage": null
+    },
+    {
+      "id": "68d9afd8-1f51-45fc-8413-0aa964fb345e",
+      "owner": "employee",
+      "request_key": "browser-d4-finance-error",
+      "status": "failed",
+      "payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "300.00",
+        "expense_date": "2026-11-10",
+        "description": "客户拜访往返交通费300元",
+        "confirmed": true
+      },
+      "result": {
+        "mode": "structured_input",
+        "execution_stage": "budget_query",
+        "error": "无法连接模拟财务服务"
+      },
+      "citations": [
+        {
+          "id": "DEMO-01",
+          "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:12.201568+00:00"
+        },
+        {
+          "id": "DEMO-02",
+          "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:12.201568+00:00"
+        },
+        {
+          "id": "DEMO-03",
+          "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:12.201568+00:00"
+        },
+        {
+          "id": "DEMO-04",
+          "text": "申请金额不得超过项目可用预算。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:12.201568+00:00"
+        },
+        {
+          "id": "DEMO-05",
+          "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+          "source": "模拟费用报销制度",
+          "version": "demo-v1",
+          "retrieved_at": "2026-11-10T11:56:12.201568+00:00"
+        }
+      ],
+      "logs": [
+        {
+          "at": "2026-11-10T11:56:12.208117+00:00",
+          "task_id": "68d9afd8-1f51-45fc-8413-0aa964fb345e",
+          "stage": "budget_query",
+          "tool": "/budgets/P001",
+          "endpoint": "http://127.0.0.1:53961/budgets/P001",
+          "method": "GET",
+          "request": null,
+          "success": false,
+          "error": "无法连接模拟财务服务",
+          "error_code": "ConnectError",
+          "duration_ms": 2034.41
+        }
+      ],
+      "events": [
+        {
+          "at": "2026-11-10T11:56:12.201568+00:00",
+          "task_id": "68d9afd8-1f51-45fc-8413-0aa964fb345e",
+          "status": "running",
+          "message": "按确认字段、有效制度与预算执行初审"
+        },
+        {
+          "at": "2026-11-10T11:56:14.242940+00:00",
+          "task_id": "68d9afd8-1f51-45fc-8413-0aa964fb345e",
+          "status": "failed",
+          "message": "无法连接模拟财务服务",
+          "failure_stage": "budget_query",
+          "error_code": null
+        }
+      ],
+      "approvals": [],
+      "created_at": "2026-11-10T11:56:12.192261+00:00",
+      "finished_at": "2026-11-10T11:56:14.242940+00:00",
+      "approval_started_at": null,
+      "wait_seconds": 0.0,
+      "manual": 0,
+      "submission_payload": {
+        "project_id": "P001",
+        "category": "交通费",
+        "amount": "300.00",
+        "expense_date": "2026-11-10",
+        "description": "客户拜访往返交通费300元",
+        "confirmed": true,
+        "parse_id": null,
+        "conflict_acknowledged": false,
+        "confirmation_note": ""
+      },
+      "parse_snapshot": {
+        "mode": "structured_input",
+        "suggested_amount": "300.00",
+        "suggested_category": "交通费",
+        "amount_candidates": [
+          {
+            "raw": "300",
+            "amount": "300.00",
+            "valid": true
+          }
+        ],
+        "conflicts": [],
+        "requires_manual_review": false,
+        "requires_confirmation": true,
+        "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+        "source": "structured_input"
+      },
+      "confirmations": [
+        {
+          "at": "2026-11-10T11:56:12.192261+00:00",
+          "actor": "employee",
+          "confirmed": true,
+          "conflicts": [],
+          "conflict_acknowledged": false,
+          "note": "",
+          "final_fields": {
+            "project_id": "P001",
+            "category": "交通费",
+            "amount": "300.00",
+            "expense_date": "2026-11-10",
+            "description": "客户拜访往返交通费300元",
+            "confirmed": true
+          }
+        }
+      ],
+      "amendments": [],
+      "pending_writeback": "{}",
+      "failure_stage": "budget_query"
+    }
+  ]
+}

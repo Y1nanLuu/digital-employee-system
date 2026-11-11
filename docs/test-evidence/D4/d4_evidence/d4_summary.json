@@ -1,0 +1,244 @@
+{
+  "test_date": "2026-11-10",
+  "code_baseline": "f4b55a7 (D4回归基线) / APP_VERSION 0.3.0 / APP_STAGE D3-integration",
+  "environment": "Windows 11 / Python 3.11.3 / Node 24.13.0 / Chrome 157.0.8103.38 / SQLite",
+  "results": {
+    "backend_pytest": {
+      "passed": 118,
+      "failed": 0,
+      "warning": 1
+    },
+    "ai_pytest": {
+      "passed": 30,
+      "failed": 0
+    },
+    "smoke_default": {
+      "passed": true,
+      "note": "两轮46/46、集成51/51，历史待审批与失败任务保留"
+    },
+    "verify_system": {
+      "passed": 46,
+      "total": 46
+    },
+    "verify_integration": {
+      "passed": 51,
+      "total": 51
+    },
+    "verify_restart": {
+      "passed": 19,
+      "total": 19
+    },
+    "browser_smoke": {
+      "groups_passed": 5,
+      "groups_failed": 0,
+      "note": "空列表、只读权限、重复审批锁、真实工具错误均通过"
+    },
+    "performance": {
+      "tasks": 100,
+      "create_seconds": {
+        "p50": 0.08719570003449917,
+        "p95": 0.121890899958089,
+        "max": 0.1383367000380531
+      },
+      "list_seconds": {
+        "p50": 0.035555999958887696,
+        "p95": 0.0470967999426648,
+        "max": 0.06209090002812445
+      },
+      "detail_seconds": {
+        "p50": 0.018011300009675324,
+        "p95": 0.026650200015865266,
+        "max": 0.027361399959772825
+      },
+      "metrics_seconds": {
+        "p50": 0.019556500017642975,
+        "p95": 0.029250200022943318,
+        "max": 0.030683599994517863
+      },
+      "concurrent_10_list_seconds": 0.19762969994917512,
+      "thresholds": {
+        "query_p95_seconds": 2.0,
+        "rule_end_to_end_p95_seconds": 10.0
+      },
+      "pass": true
+    },
+    "frontend_build_default": {
+      "passed": false,
+      "reason": "深路径环境esbuild读取父目录Access is denied"
+    },
+    "frontend_build_workaround": {
+      "passed": true,
+      "command": "vite build --configLoader runner"
+    },
+    "docker_compose": {
+      "status": "阻塞",
+      "reason": "当前环境无Docker，PostgreSQL/Compose未验证"
+    },
+    "model_module_eval": {
+      "total": 190,
+      "pass": 183,
+      "timeout": 0,
+      "error": 0,
+      "groups": {
+        "normal": {
+          "total": 60,
+          "pass": 60
+        },
+        "format": {
+          "total": 40,
+          "pass": 40
+        },
+        "multi": {
+          "total": 20,
+          "pass": 19
+        },
+        "mapping": {
+          "total": 30,
+          "pass": 30
+        },
+        "missing": {
+          "total": 15,
+          "pass": 15
+        },
+        "abnormal": {
+          "total": 15,
+          "pass": 9
+        },
+        "injection": {
+          "total": 10,
+          "pass": 10
+        }
+      },
+      "modes": {
+        "llm_pure": 176,
+        "llm_patched": 14
+      },
+      "core": {
+        "amount": [
+          106,
+          106
+        ],
+        "category": [
+          97,
+          97
+        ]
+      },
+      "safety_poison_accepted": 0
+    },
+    "model_business_adapter": {
+      "status": "部分完成",
+      "reason": "固定评测集有DeepSeek报告，业务L2适配层抽检仍待D5"
+    }
+  },
+  "browser_tasks": [
+    {
+      "id": "0f3b575b-60ad-4d0e-9f15-8795ed97a0cc",
+      "status": "succeeded",
+      "amount": "300.00"
+    },
+    {
+      "id": "fc75b566-4e81-44a8-b224-0941c520520b",
+      "status": "succeeded",
+      "amount": "900.00"
+    },
+    {
+      "id": "fe6b845e-a8ac-46a0-aa01-bf2e1da02bb2",
+      "status": "rejected",
+      "amount": "1500.00"
+    },
+    {
+      "id": "f6e38e9d-c270-4569-8059-505a64cb792c",
+      "status": "succeeded",
+      "amount": "200.00"
+    },
+    {
+      "id": "68d9afd8-1f51-45fc-8413-0aa964fb345e",
+      "status": "failed",
+      "amount": "300.00"
+    }
+  ],
+  "defects": [
+    {
+      "id": "DF-003",
+      "severity": "S1",
+      "status": "部分关闭",
+      "title": "真实模型模块评测完成，业务L2适配层抽检未完成",
+      "d5_close": true
+    },
+    {
+      "id": "DF-R01",
+      "severity": "S1",
+      "status": "部分关闭",
+      "title": "模块评测核心金额100%，业务适配层真实调用待复测",
+      "d5_close": true
+    },
+    {
+      "id": "GATE-01",
+      "severity": "S1",
+      "status": "阻塞",
+      "title": "Docker Compose/PostgreSQL未验证",
+      "d5_close": true
+    },
+    {
+      "id": "DF-001",
+      "severity": "S2",
+      "status": "打开",
+      "title": "默认npm run build在深路径环境失败，workaround通过",
+      "d5_close": true
+    },
+    {
+      "id": "DF-002",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "verify_system已改为真实任务状态核对并通过历史任务连续两轮",
+      "d5_close": false
+    },
+    {
+      "id": "DF-004",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "指数金额严格拒绝",
+      "d5_close": false
+    },
+    {
+      "id": "DF-005",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "金额统一两位小数",
+      "d5_close": false
+    },
+    {
+      "id": "DF-006",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "工具失败日志含stage/task_id/error_code/可读原因",
+      "d5_close": false
+    },
+    {
+      "id": "DF-007",
+      "severity": "S2",
+      "status": "已关闭",
+      "title": "smoke.py默认Windows输出编码已修复",
+      "d5_close": false
+    },
+    {
+      "id": "DF-R03",
+      "severity": "S1",
+      "status": "已关闭",
+      "title": "详情加载锁和审批目标绑定浏览器回归通过",
+      "d5_close": false
+    }
+  ],
+  "d5_required": [
+    "DF-003 真实模型业务API成功/超时/降级证据",
+    "DF-R01 业务适配层金额边界复测",
+    "GATE-01 Compose/PostgreSQL与持久化验证",
+    "DF-001 默认前端构建可复现修复",
+    "D5候选版版本标识、全量回归和演示脚本"
+  ],
+  "model_sample_requirement": {
+    "required": ">=200",
+    "actual": 190,
+    "status": "待D5补齐或老师确认"
+  }
+}
