@@ -148,8 +148,10 @@ def reject_duplicate_upload(db,user,fields,digest,exclude_task=None):
         same_number=bool(number and inv.get('invoice_no')==number and (len(number)==20 or inv.get('invoice_code','')==code))
         if same_number or original and original.digest==digest:
             own=task.owner==user['username'];label=task.business_no or task.id
-            if own and (task.status in ['returned','awaiting_approval'] or task.status=='failed' and not task.pending_writeback):
+            if own and task.status in ['returned','awaiting_approval']:
                 detail=f'这张发票已关联报销 {label}。请到“我的报销”修改原申请，或先撤销原申请再上传；本次未保存、未加入队列。'
+            elif own and task.status=='failed':
+                detail=f'这张发票已关联处理异常的报销 {label}，请联系管理员核对并恢复原申请；本次未保存、未加入队列。'
             elif own and task.status=='succeeded':
                 detail=f'这张发票已在报销 {label} 中通过，不能重复申报；本次未保存、未加入队列。'
             else:
@@ -399,7 +401,7 @@ def withdraw(task_id:str,db:Session=Depends(get_db),user=Depends(current_user)):
         task=db.scalar(select(Task).where(Task.id==task_id).with_for_update())
         if not task or user['role']!='employee' or task.owner!=user['username']:raise HTTPException(404,'申请不存在或不可见')
         if task.status=='cancelled':return services.serialize(task,user)
-        if task.status not in ['returned','awaiting_approval','failed'] or task.pending_writeback or task.result.get('receipt'):
+        if task.status not in ['returned','awaiting_approval'] or task.pending_writeback or task.result.get('receipt'):
             raise HTTPException(409,'当前状态不能撤销；处理中请待初审结束，写回结果未核实请先恢复，已完成申请保留记录')
         from .models import InvoiceClaim
         for row in db.scalars(select(InvoiceClaim).where(InvoiceClaim.task_id==task.id)):db.delete(row)

@@ -250,14 +250,22 @@ def recover(task, action, actor, reason, db):
         event(task, 'running', '受限运维恢复预算查询', actor=actor, reason=reason)
         db.commit()
         if task.policy_version!='demo-v1':
-            from .enterprise import execute as execute_enterprise
-            execute_enterprise(task,db)
+            from .enterprise import execute as execute_enterprise, finish_approval as finish_enterprise_approval
+            decision=next((record for record in reversed(task.approvals)
+                           if record.get('revision')==task.revision),None)
+            if decision and decision['decision'] in ['approve','reject']:
+                finish_enterprise_approval(task,decision,db)
+            else:
+                execute_enterprise(task,db)
         elif task.approvals:
             finish_approval(task, task.approvals[-1], db)
         else:
             execute(task, db)
     else:
         raise HTTPException(422, '不支持的恢复操作')
+    if task.policy_version!='demo-v1':
+        from .enterprise import record_revision
+        record_revision(task,db)
 
 
 def serialize(task,viewer=None):

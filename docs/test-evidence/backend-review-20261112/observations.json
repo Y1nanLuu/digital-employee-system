@@ -1,0 +1,30 @@
+{
+  "failed_withdraw": {
+    "expected_http": 409,
+    "actual_http": 200,
+    "actual_status": "cancelled",
+    "original_stage": "budget_query"
+  },
+  "old_original_access": {
+    "expected_approver_http": 200,
+    "actual_approver_http": 404,
+    "actual_owner_http": 200,
+    "revisions": 2
+  },
+  "approval_recovery": {
+    "expected_status": "succeeded",
+    "actual_status": "awaiting_approval",
+    "approval_count": 1,
+    "writebacks": 0,
+    "manual_reasons": [
+      "模拟台账未知，请人工核对票据"
+    ]
+  },
+  "recovery_revision_audit": {
+    "expected_revision_status": "succeeded",
+    "actual_revision_status": "failed",
+    "actual_task_status": "succeeded",
+    "task_has_receipt": true,
+    "revision_has_receipt": false
+  }
+}

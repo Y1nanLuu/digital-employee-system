@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-12",
+  "recorded_at": "2026-11-12T00:59:53.262800+08:00",
+  "code_baseline": "4fafb20 + local backend recovery fixes (uncommitted)",
+  "environment": "Python 3.11.15 in isolated .venv-audit; pinned backend dependencies; temporary SQLite databases and synthetic invoice files",
+  "targeted_formal_regression": {
+    "passed": 10,
+    "failed": 0,
+    "seconds": 2.5
+  },
+  "full_backend_ai_regression": {
+    "passed": 220,
+    "failed": 0,
+    "warnings": 1,
+    "seconds": 19.98
+  },
+  "original_four_probes_after_fix": {
+    "passed": 4,
+    "failed": 0,
+    "seconds": 1.48
+  },
+  "real_http_cli": {
+    "passed": 11,
+    "failed": 0,
+    "receipt_count": 2,
+    "raw_report": "http-cli-results.json"
+  },
+  "frontend_build": "TypeScript and Vite passed",
+  "fixes": {
+    "BE-20261112-01": "failed withdrawal returns 409; employee UI and duplicate-intake instructions follow AC59",
+    "BE-20261112-02": "approver reads current and historical originals via task amendments and revisions; unrelated drafts remain inaccessible",
+    "BE-20261112-03": "retry-budget continues a persisted approval only from the current revision, rechecking hard constraints without another approval or wait charge",
+    "BE-20261112-04": "both recovery success and repeated tool failure refresh current revision review_record without altering older revisions"
+  },
+  "before": {
+    "failed_withdraw": {
+      "expected_http": 409,
+      "actual_http": 200,
+      "actual_status": "cancelled",
+      "original_stage": "budget_query"
+    },
+    "old_original_access": {
+      "expected_approver_http": 200,
+      "actual_approver_http": 404,
+      "actual_owner_http": 200,
+      "revisions": 2
+    },
+    "approval_recovery": {
+      "expected_status": "succeeded",
+      "actual_status": "awaiting_approval",
+      "approval_count": 1,
+      "writebacks": 0,
+      "manual_reasons": [
+        "模拟台账未知，请人工核对票据"
+      ]
+    },
+    "recovery_revision_audit": {
+      "expected_revision_status": "succeeded",
+      "actual_revision_status": "failed",
+      "actual_task_status": "succeeded",
+      "task_has_receipt": true,
+      "revision_has_receipt": false
+    }
+  },
+  "after": {
+    "failed_withdraw": {
+      "expected_http": 409,
+      "actual_http": 409,
+      "actual_status": null,
+      "original_stage": "budget_query"
+    },
+    "old_original_access": {
+      "expected_approver_http": 200,
+      "actual_approver_http": 200,
+      "actual_owner_http": 200,
+      "revisions": 2
+    },
+    "approval_recovery": {
+      "expected_status": "succeeded",
+      "actual_status": "succeeded",
+      "approval_count": 1,
+      "writebacks": 1,
+      "manual_reasons": [
+        "模拟台账未知，请人工核对票据"
+      ]
+    },
+    "recovery_revision_audit": {
+      "expected_revision_status": "succeeded",
+      "actual_revision_status": "succeeded",
+      "actual_task_status": "succeeded",
+      "task_has_receipt": true,
+      "revision_has_receipt": true
+    }
+  },
+  "formal_tests": "backend/tests/test_enterprise_recovery.py",
+  "reproduce": [
+    ".venv-audit/bin/python -m pytest -c backend/pytest.ini backend/tests/test_enterprise_recovery.py -q",
+    ".venv-audit/bin/python -m pytest -c backend/pytest.ini backend/tests ai-module/test_extractor.py -q",
+    ".venv-audit/bin/python docs/test-evidence/backend-fix-20261112/verify_http_cli.py",
+    "cd frontend && npm run build"
+  ],
+  "not_verified": [
+    "real LLM calls",
+    "PostgreSQL/Compose on this host",
+    "final browser workflow"
+  ]
+}

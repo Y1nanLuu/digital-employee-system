@@ -7,7 +7,7 @@ import os
 from fastapi import HTTPException
 from sqlalchemy import select
 from . import config
-from .models import InvoiceFile,Task,FileAccess
+from .models import InvoiceFile,Task,TaskRevision,FileAccess
 
 def root():
     p=Path(config.FILE_STORAGE_DIR).resolve();p.mkdir(parents=True,exist_ok=True);return p
@@ -35,8 +35,15 @@ def owned(db,file_id,user):
     if not item:raise HTTPException(404,'票据不存在或不可见')
     allowed=item.owner==user['username'] or user['role']=='admin'
     if user['role']=='approver':
-        allowed=any(str(t.payload.get('file_id'))==item.id or any(str(x.get('payload',{}).get('file_id'))==item.id for x in t.amendments)
+        def references(payload):
+            return isinstance(payload,dict) and str(payload.get('file_id'))==item.id
+        allowed=any(references(t.payload) or any(references(change.get(key))
+                    for change in t.amendments for key in ['payload','before','after'])
                     for t in db.scalars(select(Task)))
+        if not allowed:
+            # Only revisions belonging to an existing visible task grant access.
+            allowed=any(references(revision.payload) or references(revision.before)
+                        for revision in db.scalars(select(TaskRevision).join(Task,Task.id==TaskRevision.task_id)))
     if not allowed:raise HTTPException(404,'票据不存在或不可见')
     return item
 
