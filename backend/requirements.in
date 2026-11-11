@@ -7,3 +7,6 @@ pytest>=8,<10
 tzdata>=2025.1
 pypdf>=5,<8
 python-multipart>=0.0.9,<1
+pypdfium2==5.15.2
+Pillow==13.0.0
+rapidocr-onnxruntime==1.4.4

@@ -33,13 +33,17 @@ services:
       FINANCE_URL: http://finance:8001
       FINANCE_KEY: ${FINANCE_KEY:-local-finance-key}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-demo123}
-      APP_VERSION: ${APP_VERSION:-0.5.0}
-      APP_STAGE: ${APP_STAGE:-D5-candidate}
-      # 构建上下文是 ./backend，镜像内不含仓库根目录的 ai-module，
-      # 因此容器里打开模型通道只会得到 rule_fallback + 转人工。
-      # 这里用独立的 COMPOSE_AI_MODULE_ENABLED，避免 .env 里本地开发用的
-      # AI_MODULE_ENABLED=true 被带进容器。
+      APP_VERSION: 0.5.0
+      APP_STAGE: enterprise-review
       AI_MODULE_ENABLED: ${COMPOSE_AI_MODULE_ENABLED:-false}
+      AI_MODULE_CONFIG: /ai-module/model_config.deepseek.json
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      COMPANY_TITLE: ${COMPANY_TITLE:-示例科技有限公司}
+      FILE_STORAGE_DIR: /app/data/invoices
+      ACTIVE_POLICY_VERSION: enterprise-demo-v2
+    volumes:
+      - backend-files:/app/data
+      - ./ai-module:/ai-module:ro
     depends_on:
       db:
         condition: service_healthy
@@ -62,3 +66,4 @@ services:
 volumes:
   postgres-data:
   finance-data:
+  backend-files:

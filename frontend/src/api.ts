@@ -1,8 +1,8 @@
 export type UserRole = 'employee' | 'approver' | 'admin'
-export type TaskStatus = 'queued' | 'running' | 'awaiting_approval' | 'writing_back' | 'succeeded' | 'rejected' | 'failed'
-export type ClaimCategory = '交通费' | '办公用品' | '其他'
+export type TaskStatus = 'queued' | 'running' | 'awaiting_approval' | 'returned' | 'writing_back' | 'succeeded' | 'rejected' | 'failed' | 'cancelled'
+export type ClaimCategory = '交通费' | '住宿费' | '业务招待费' | '办公用品' | '通讯费' | '培训会议费' | '软件服务费' | '出差餐补' | '其他'
 
-export interface User { username: string; name: string; role: UserRole }
+export interface User { username: string; name: string; role: UserRole; department?: string }
 export interface Claim {
   project_id: 'P001' | 'P002'
   category: ClaimCategory
@@ -14,6 +14,15 @@ export interface Claim {
   invoice_id?: string
   conflict_acknowledged?: boolean
   confirmation_note?: string
+  department?: string
+  file_id?: string
+  invoice?: InvoiceFields
+  details?: Record<string, unknown>
+}
+
+export interface InvoiceFields {
+  invoice_no: string; invoice_code: string; invoice_date: string | null
+  buyer: string; seller: string; total: string; item_name: string
 }
 export interface ParseSuggestion extends ParseSnapshot {
   mode: string
@@ -25,7 +34,7 @@ export interface ParseSuggestion extends ParseSnapshot {
 export interface Citation { id: string; text: string; source: string; version: string }
 export interface TaskEvent { at: string; status: TaskStatus; message: string }
 export interface ToolLog { task_id?: string; stage?: string; endpoint?: string; error_code?: string; at: string; tool: string; method: string; request: unknown; success: boolean; response?: unknown; error?: string; duration_ms: number }
-export interface Approval { reviewed_fields?: boolean; corrected_fields?: CorrectedFields | null; correction_reason?: string; at: string; actor: string; decision: 'approve' | 'reject'; comment: string; manual_basis: string }
+export interface Approval { reviewed_fields?: boolean; corrected_fields?: CorrectedFields | null; correction_reason?: string; at: string; actor: string; decision: 'approve' | 'reject' | 'return'; comment: string; manual_basis: string }
 export interface TaskResult {
   decision?: 'approved' | 'rejected'
   reason?: string
@@ -33,11 +42,17 @@ export interface TaskResult {
   error?: string
   error_code?: string
   manual_reasons?: string[]
+  return_reason?: string
+  initial_decision?: string
+  initial_review?: { conclusion: string; reasons: string[]; citation_ids: string[]; source: string; model?: string; latency_ms?: number }
+  invoice_check?: { status: string; reason: string; simulated: boolean }
+  duplicate_check?: { duplicate: boolean; suspected: boolean; simulated: boolean }
   budget?: { project_id: string; available: string; currency: string; simulated: boolean }
   receipt?: { task_id: string; decision: string; reason: string; receipt_id: string; simulated: boolean }
 }
 export interface Task {
   id: string
+  business_no?: string | null
   owner: string
   status: TaskStatus
   payload: Claim
@@ -54,6 +69,10 @@ export interface Task {
   confirmations: unknown[]
   amendments: unknown[]
   failure_stage: string | null
+  policy_version?: string
+  revision?: number
+  revisions?: unknown[]
+  return_draft?: Record<string,unknown>
 }
 
 let credentials = ''
@@ -127,9 +146,15 @@ export interface InvoiceMeta {
   text_chars: number
   text_preview: string
   hints: { invoice_no?: string; expense_date?: string; invoice_title?: string }
+  file_id?: string
+  fields?: InvoiceFields
+  missing_fields?: string[]
+  read_method?: string
+  recognition_error?: { code: string; message: string } | null
 }
 export interface InvoiceSuggestion extends ParseSuggestion {
   invoice_id: string
+  file_id?: string
   invoice: InvoiceMeta
 }
 
@@ -161,10 +186,18 @@ export async function uploadInvoice(file: File): Promise<InvoiceSuggestion> {
   return readResponse<InvoiceSuggestion>(response)
 }
 export interface ApprovalRequest {
-  decision: 'approve' | 'reject'
+  decision: 'approve' | 'reject' | 'return'
   comment: string
   manual_basis?: string
   corrected_fields?: CorrectedFields
   correction_reason?: string
   reviewed_fields?: boolean
+}
+
+export async function readFile(fileId: string): Promise<Blob> {
+  const response = await fetch('/api/files/' + encodeURIComponent(fileId) + '/content', {
+    headers: { Authorization: 'Basic ' + credentials }
+  })
+  if (!response.ok) { await readResponse(response); throw new Error('无法读取原件') }
+  return response.blob()
 }

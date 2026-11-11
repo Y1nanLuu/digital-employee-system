@@ -16,6 +16,8 @@ os.environ['FINANCE_DATABASE_URL'] = 'sqlite:///' + (Path(scratch.name)/'finance
 os.environ['DEMO_PASSWORD'] = 'demo123'
 os.environ['FINANCE_KEY'] = 'local-finance-key'
 os.environ['AI_MODULE_ENABLED'] = 'false'
+os.environ['ACTIVE_POLICY_VERSION'] = 'demo-v1'  # preserve the historical regression contract
+os.environ['FILE_STORAGE_DIR'] = str(Path(scratch.name)/'files')
 from app.main import app
 from app import services
 from app.database import Base, engine
