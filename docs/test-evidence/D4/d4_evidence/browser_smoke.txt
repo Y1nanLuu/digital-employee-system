@@ -1,0 +1,5 @@
+PASS: browser strict money, conflict confirmation, validation-error correction
+PASS: browser parse linkage, detail loading lock, atomic approval amendment and audit
+PASS: browser rejection reason, terminal timeline, and three API-backed dashboard metrics
+PASS: browser empty list, read-only permission, duplicate approval lock and real tool error
+PASS: browser unknown-result persistence, refresh retry with original key, no duplicate task, no page errors

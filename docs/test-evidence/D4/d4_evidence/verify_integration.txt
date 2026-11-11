@@ -1,0 +1,53 @@
+PASS  业务服务健康检查返回 ok
+PASS  健康检查暴露集成版本与阶段
+PASS  健康检查暴露AI开关与数据库方言
+PASS  模拟财务服务健康检查返回 ok
+PASS  自动初审任务终态为 succeeded
+PASS  自动初审事件序列为 running→writing_back→succeeded
+PASS  事件均携带同一任务编号
+PASS  工具日志按阶段记录预算查询与写回
+PASS  工具日志均携带同一任务编号
+PASS  超阈值任务进入 awaiting_approval
+PASS  转人工事件序列为 running→awaiting_approval
+PASS  转人工原因写入手工原因列表
+PASS  审批通过后任务续跑至 succeeded
+PASS  审批续跑事件接在原序列之后
+PASS  审批记录保留条款变更前后对照
+PASS  审批拒绝后任务终止为 rejected
+PASS  拒绝事件序列为 running→awaiting_approval→running→writing_back→rejected
+PASS  预算不足直接拒绝且不经人工
+PASS  预算拒绝事件序列为 running→writing_back→rejected
+PASS  无制度依据转人工并说明原因
+PASS  员工不能审批他人/本人任务(403)
+PASS  员工不能查看指标(403)
+PASS  审批人不能提交报销(403)
+PASS  管理员不能提交报销(403)
+PASS  管理员不能审批(403)
+PASS  审批人可查看指标(200)
+PASS  管理员可查看指标(200)
+PASS  审批人可查看全部任务(200)
+PASS  员工可查看本人任务(200)
+PASS  无认证访问任务列表返回401
+PASS  /api/parse 返回解析编号与耗时
+PASS  /api/parse 返回金额候选与冲突标记
+PASS  携带 parse_id 提交成功并记录解析快照
+PASS  解析快照与提交载荷一并留存
+PASS  复用他人或不存在的 parse_id 被拒(422)
+PASS  说明变更后复用旧 parse_id 被拒(422)
+PASS  说明与申报金额不一致需显式确认(422)
+PASS  显式确认冲突后提交成功并保留确认记录
+PASS  补正前置任务处于 awaiting_approval
+PASS  补正但未显式核对字段被拒(422)
+PASS  拒绝请求不允许同时补正(422)
+PASS  补正后沿原任务续跑并成功
+PASS  补正保留原值与新值
+PASS  补正后重新执行阈值校验（900元不再转人工）
+PASS  指标总数与任务列表一致
+PASS  指标完成数与终态任务数一致
+PASS  转人工率与任务 manual 标记一致
+PASS  系统耗时不高于端到端耗时
+PASS  指标键齐全
+PASS  财务凭证编号可由任务编号追溯
+PASS  财务服务同内容重放返回原凭证
+
+总计 51 项，通过 51 项，失败 0 项
