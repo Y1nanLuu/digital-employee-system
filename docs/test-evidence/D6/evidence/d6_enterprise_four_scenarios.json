@@ -1,0 +1,574 @@
+{
+  "started_at": "2026-11-12T09:40:53.922243+08:00",
+  "model_mode": "mock_openai_stub; not a real model evaluation",
+  "checks": [
+    {
+      "label": "health enterprise v0.5",
+      "passed": true,
+      "detail": {
+        "status": "ok",
+        "mode": "hybrid",
+        "version": "0.5.0",
+        "stage": "enterprise-review",
+        "ai_enabled": true,
+        "database": "sqlite",
+        "active_policy": "enterprise-demo-v2"
+      }
+    },
+    {
+      "label": "upload 26000000000000000001 -> 200",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "body": {
+          "mode": "receipt_fields",
+          "source": "pdf_text",
+          "suggested_amount": "300.00",
+          "suggested_category": "交通费",
+          "requires_confirmation": true,
+          "requires_manual_review": true,
+          "message": "已保存原件，请对照票据核对并补全字段",
+          "invoice_id": "6b562902-03de-4716-a987-8052f4c001f4",
+          "file_id": "9a378ee3-4284-470c-84d9-98f69e9a5c60",
+          "latency_ms": 60.22,
+          "invoice": {
+            "file_id": "9a378ee3-4284-470c-84d9-98f69e9a5c60",
+            "filename": "receipt.pdf",
+            "media_type": "application/pdf",
+            "size": 697,
+            "sha256": "1077317ac1a5041c9a1d9f33db9f92810a3597216d015666c7ce53f6287f0c96",
+            "uploaded_at": "2026-11-12T01:40:56.475635+00:00",
+            "invoice_id": null,
+            "invoice_fields": {
+              "invoice_no": "26000000000000000001",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "300.00",
+              "item_name": "taxi transport"
+            },
+            "pages": 1,
+            "read_method": "pdf_text",
+            "text_chars": 88,
+            "text_preview": "Invoice No: 26000000000000000001\nDate: 2026-11-01\nAmount CNY 300.00\nItem: taxi transport",
+            "fields": {
+              "invoice_no": "26000000000000000001",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "300.00",
+              "item_name": "taxi transport"
+            },
+            "missing_fields": [
+              "buyer",
+              "seller"
+            ],
+            "recognition_error": null,
+            "hints": {
+              "invoice_no": "26000000000000000001",
+              "invoice_title": "",
+              "expense_date": "2026-11-01"
+            }
+          },
+          "parse_id": "6b562902-03de-4716-a987-8052f4c001f4"
+        }
+      }
+    },
+    {
+      "label": "scenario1 automatic succeeded",
+      "passed": true,
+      "detail": {
+        "code": 201,
+        "status": "succeeded",
+        "result": {
+          "field_analysis": {
+            "mode": "llm",
+            "suggested_amount": "300.00",
+            "suggested_category": "交通费",
+            "amount_candidates": [
+              {
+                "raw": "300.00",
+                "amount": "300.00",
+                "valid": true
+              }
+            ],
+            "conflicts": [],
+            "requires_manual_review": false,
+            "requires_confirmation": true,
+            "message": "模型提取建议，请核对金额、类别与日期后再提交。",
+            "ai_enabled": true,
+            "source": "llm",
+            "model": "d6-mock",
+            "fields": {
+              "submitter": "演示员工",
+              "department": "研发部",
+              "expense_type": "交通费",
+              "amount": 300,
+              "expense_date": "2026-11-12",
+              "invoice_no": "26000000000000000001",
+              "invoice_title": "示例科技有限公司",
+              "description": "D6 mock extraction"
+            },
+            "missing_fields": [],
+            "patched_fields": [],
+            "violations": [],
+            "mapping_reason": "按具体交通、住宿或混合用途映射；无法确定的差旅归为其他",
+            "fallback_event": null
+          },
+          "mode": "llm",
+          "execution_stage": "writeback",
+          "budget": {
+            "project_id": "P001",
+            "available": "10000.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "invoice_check": {
+            "task_id": "fb691e49-e68e-468b-aa89-b9e089eb2e3a",
+            "invoice_no": "26000000000000000001",
+            "status": "valid",
+            "reason": "课程合成测试台账",
+            "simulated": true
+          },
+          "duplicate_check": {
+            "task_id": "fb691e49-e68e-468b-aa89-b9e089eb2e3a",
+            "invoice_no": "26000000000000000001",
+            "duplicate": false,
+            "suspected": false,
+            "reference_task_id": null,
+            "simulated": true
+          },
+          "rule_findings": {
+            "hard": [],
+            "manual": [],
+            "facts": {}
+          },
+          "initial_review": {
+            "conclusion": "通过",
+            "reasons": [
+              "D6合成模型响应仅用于验收工具链，不替代真实模型评测"
+            ],
+            "citation_ids": [
+              "GEN-01",
+              "GEN-02"
+            ],
+            "source": "llm",
+            "model": "d6-mock",
+            "latency_ms": 1.76
+          },
+          "initial_decision": "通过",
+          "decision": "approved",
+          "reason": "制度、工具及模型初审一致通过",
+          "receipt": {
+            "task_id": "fb691e49-e68e-468b-aa89-b9e089eb2e3a",
+            "decision": "approved",
+            "reason": "制度、工具及模型初审一致通过",
+            "invoice_no": "26000000000000000001",
+            "invoice_code": "",
+            "owner": "employee",
+            "amount": "300.00",
+            "expense_date": "2026-11-12",
+            "file_sha256": "1077317ac1a5041c9a1d9f33db9f92810a3597216d015666c7ce53f6287f0c96",
+            "receipt_id": "demo-fb691e49-e68e-468b-aa89-b9e089eb2e3a",
+            "simulated": true
+          }
+        }
+      }
+    },
+    {
+      "label": "upload 26000000000000000991 -> 200",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "body": {
+          "mode": "receipt_fields",
+          "source": "pdf_text",
+          "suggested_amount": "300.00",
+          "suggested_category": "交通费",
+          "requires_confirmation": true,
+          "requires_manual_review": true,
+          "message": "已保存原件，请对照票据核对并补全字段",
+          "invoice_id": "1fe95269-88ec-4b92-ad98-b2f33afb1e9a",
+          "file_id": "3ae6a443-9f39-4f8a-949e-693257be424e",
+          "latency_ms": 12.07,
+          "invoice": {
+            "file_id": "3ae6a443-9f39-4f8a-949e-693257be424e",
+            "filename": "receipt.pdf",
+            "media_type": "application/pdf",
+            "size": 697,
+            "sha256": "4b3482a7568d81877b3e0c135762233da7a20f4d4ba2795f1a89e8b5b7f46552",
+            "uploaded_at": "2026-11-12T01:40:56.811649+00:00",
+            "invoice_id": null,
+            "invoice_fields": {
+              "invoice_no": "26000000000000000991",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "300.00",
+              "item_name": "taxi transport"
+            },
+            "pages": 1,
+            "read_method": "pdf_text",
+            "text_chars": 88,
+            "text_preview": "Invoice No: 26000000000000000991\nDate: 2026-11-01\nAmount CNY 300.00\nItem: taxi transport",
+            "fields": {
+              "invoice_no": "26000000000000000991",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "300.00",
+              "item_name": "taxi transport"
+            },
+            "missing_fields": [
+              "buyer",
+              "seller"
+            ],
+            "recognition_error": null,
+            "hints": {
+              "invoice_no": "26000000000000000991",
+              "invoice_title": "",
+              "expense_date": "2026-11-01"
+            }
+          },
+          "parse_id": "1fe95269-88ec-4b92-ad98-b2f33afb1e9a"
+        }
+      }
+    },
+    {
+      "label": "scenario2 unknown awaits approval",
+      "passed": true,
+      "detail": "awaiting_approval"
+    },
+    {
+      "label": "scenario2 approval succeeded",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "status": "succeeded"
+      }
+    },
+    {
+      "label": "upload 26000000000000000992 -> 200",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "body": {
+          "mode": "receipt_fields",
+          "source": "pdf_text",
+          "suggested_amount": "300.00",
+          "suggested_category": "交通费",
+          "requires_confirmation": true,
+          "requires_manual_review": true,
+          "message": "已保存原件，请对照票据核对并补全字段",
+          "invoice_id": "d0fcd9ed-b8e3-4edd-8d7c-df2f260f739b",
+          "file_id": "bfcb5e84-1d54-4da5-8402-22fcf0dd0c1b",
+          "latency_ms": 13.02,
+          "invoice": {
+            "file_id": "bfcb5e84-1d54-4da5-8402-22fcf0dd0c1b",
+            "filename": "receipt.pdf",
+            "media_type": "application/pdf",
+            "size": 697,
+            "sha256": "c803998d9ce57763a1e984c49807035de690bf711370965446015628e1b5a18c",
+            "uploaded_at": "2026-11-12T01:40:57.180052+00:00",
+            "invoice_id": null,
+            "invoice_fields": {
+              "invoice_no": "26000000000000000992",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "300.00",
+              "item_name": "taxi transport"
+            },
+            "pages": 1,
+            "read_method": "pdf_text",
+            "text_chars": 88,
+            "text_preview": "Invoice No: 26000000000000000992\nDate: 2026-11-01\nAmount CNY 300.00\nItem: taxi transport",
+            "fields": {
+              "invoice_no": "26000000000000000992",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "300.00",
+              "item_name": "taxi transport"
+            },
+            "missing_fields": [
+              "buyer",
+              "seller"
+            ],
+            "recognition_error": null,
+            "hints": {
+              "invoice_no": "26000000000000000992",
+              "invoice_title": "",
+              "expense_date": "2026-11-01"
+            }
+          },
+          "parse_id": "d0fcd9ed-b8e3-4edd-8d7c-df2f260f739b"
+        }
+      }
+    },
+    {
+      "label": "scenario3 unknown awaits approval",
+      "passed": true,
+      "detail": "awaiting_approval"
+    },
+    {
+      "label": "scenario3 rejection returns for edit",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "status": "returned"
+      }
+    },
+    {
+      "label": "scenario3 employee withdraws",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "status": "cancelled"
+      }
+    },
+    {
+      "label": "upload 26000000000000000993 -> 200",
+      "passed": true,
+      "detail": {
+        "code": 200,
+        "body": {
+          "mode": "receipt_fields",
+          "source": "pdf_text",
+          "suggested_amount": "600.00",
+          "suggested_category": "交通费",
+          "requires_confirmation": true,
+          "requires_manual_review": true,
+          "message": "已保存原件，请对照票据核对并补全字段",
+          "invoice_id": "e4053d5a-15ac-4f65-8669-df6b07c77ace",
+          "file_id": "932e29d1-b938-4332-b31d-87c3f91085bb",
+          "latency_ms": 13.6,
+          "invoice": {
+            "file_id": "932e29d1-b938-4332-b31d-87c3f91085bb",
+            "filename": "receipt.pdf",
+            "media_type": "application/pdf",
+            "size": 697,
+            "sha256": "f5925fc250061c6cbfeda6aa1d5e40d2c3ccb7e6081db807912fbee6a1dbdf16",
+            "uploaded_at": "2026-11-12T01:40:57.413053+00:00",
+            "invoice_id": null,
+            "invoice_fields": {
+              "invoice_no": "26000000000000000993",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "600.00",
+              "item_name": "taxi transport"
+            },
+            "pages": 1,
+            "read_method": "pdf_text",
+            "text_chars": 88,
+            "text_preview": "Invoice No: 26000000000000000993\nDate: 2026-11-01\nAmount CNY 600.00\nItem: taxi transport",
+            "fields": {
+              "invoice_no": "26000000000000000993",
+              "invoice_code": "",
+              "invoice_date": "2026-11-01",
+              "buyer": "",
+              "seller": "",
+              "total": "600.00",
+              "item_name": "taxi transport"
+            },
+            "missing_fields": [
+              "buyer",
+              "seller"
+            ],
+            "recognition_error": null,
+            "hints": {
+              "invoice_no": "26000000000000000993",
+              "invoice_title": "",
+              "expense_date": "2026-11-01"
+            }
+          },
+          "parse_id": "e4053d5a-15ac-4f65-8669-df6b07c77ace"
+        }
+      }
+    },
+    {
+      "label": "scenario4 budget insufficient rejected",
+      "passed": true,
+      "detail": {
+        "code": 201,
+        "status": "rejected",
+        "result": {
+          "field_analysis": {
+            "mode": "llm",
+            "suggested_amount": "300.00",
+            "suggested_category": "交通费",
+            "amount_candidates": [
+              {
+                "raw": "600.00",
+                "amount": "600.00",
+                "valid": true
+              }
+            ],
+            "conflicts": [],
+            "requires_manual_review": false,
+            "requires_confirmation": true,
+            "message": "模型提取建议，请核对金额、类别与日期后再提交。",
+            "ai_enabled": true,
+            "source": "llm",
+            "model": "d6-mock",
+            "fields": {
+              "submitter": "演示员工",
+              "department": "研发部",
+              "expense_type": "交通费",
+              "amount": 300,
+              "expense_date": "2026-11-12",
+              "invoice_no": "26000000000000000001",
+              "invoice_title": "示例科技有限公司",
+              "description": "D6 mock extraction"
+            },
+            "missing_fields": [],
+            "patched_fields": [],
+            "violations": [],
+            "mapping_reason": "按具体交通、住宿或混合用途映射；无法确定的差旅归为其他",
+            "fallback_event": null
+          },
+          "mode": "llm",
+          "execution_stage": "writeback",
+          "budget": {
+            "project_id": "P002",
+            "available": "500.00",
+            "currency": "CNY",
+            "simulated": true
+          },
+          "invoice_check": {
+            "task_id": "8186a011-c385-4d7f-b9c8-9dc327bb46d3",
+            "invoice_no": "26000000000000000993",
+            "status": "unknown",
+            "reason": "模拟台账无此票据，须人工核对；格式合格不等于验真成功",
+            "simulated": true
+          },
+          "duplicate_check": {
+            "task_id": "8186a011-c385-4d7f-b9c8-9dc327bb46d3",
+            "invoice_no": "26000000000000000993",
+            "duplicate": false,
+            "suspected": false,
+            "reference_task_id": null,
+            "simulated": true
+          },
+          "rule_findings": {
+            "hard": [
+              {
+                "code": "GEN-06",
+                "message": "项目预算不足"
+              }
+            ],
+            "manual": [
+              {
+                "code": "INV-04",
+                "message": "模拟台账未知，请人工核对票据"
+              }
+            ],
+            "facts": {}
+          },
+          "initial_review": {
+            "conclusion": "通过",
+            "reasons": [
+              "D6合成模型响应仅用于验收工具链，不替代真实模型评测"
+            ],
+            "citation_ids": [
+              "GEN-01",
+              "GEN-02"
+            ],
+            "source": "llm",
+            "model": "d6-mock",
+            "latency_ms": 11.38
+          },
+          "initial_decision": "拒绝",
+          "reason": "项目预算不足",
+          "decision": "rejected",
+          "receipt": {
+            "task_id": "8186a011-c385-4d7f-b9c8-9dc327bb46d3",
+            "decision": "rejected",
+            "reason": "项目预算不足",
+            "invoice_no": "26000000000000000993",
+            "invoice_code": "",
+            "owner": "employee",
+            "amount": "600.00",
+            "expense_date": "2026-11-12",
+            "file_sha256": "f5925fc250061c6cbfeda6aa1d5e40d2c3ccb7e6081db807912fbee6a1dbdf16",
+            "receipt_id": "demo-8186a011-c385-4d7f-b9c8-9dc327bb46d3",
+            "simulated": true
+          }
+        }
+      }
+    },
+    {
+      "label": "duplicate approval returns 409",
+      "passed": true,
+      "detail": 409
+    },
+    {
+      "label": "metrics visible",
+      "passed": true,
+      "detail": {
+        "total": 4,
+        "completed": 3,
+        "completion_rate": 0.75,
+        "manual_rate": 0.5,
+        "average_processing_seconds": 0.21085766666666664,
+        "average_end_to_end_seconds": 0.217218
+      }
+    }
+  ],
+  "scenarios": {
+    "automatic": {
+      "id": "fb691e49-e68e-468b-aa89-b9e089eb2e3a",
+      "business_no": "BX-E001-20261112-0001",
+      "status": "succeeded",
+      "initial_review_source": "llm",
+      "logs": [
+        "/budgets/P001",
+        "/checks/invoice",
+        "/checks/duplicate",
+        "llm_initial_review",
+        "/reviews/results"
+      ]
+    },
+    "manual_approve": {
+      "id": "de2f4a8e-1479-4f76-8eaa-1a8afb0cfc7e",
+      "business_no": "BX-E001-20261112-0002",
+      "initial": "awaiting_approval",
+      "final": "succeeded",
+      "approvals": 1
+    },
+    "manual_return_cancel": {
+      "id": "886ca67a-acc8-4d67-9fb9-4c469f268306",
+      "business_no": "BX-E001-20261112-0003",
+      "returned": "returned",
+      "final": "cancelled",
+      "receipt_present": false
+    },
+    "budget_reject": {
+      "id": "8186a011-c385-4d7f-b9c8-9dc327bb46d3",
+      "business_no": "BX-E001-20261112-0004",
+      "status": "rejected",
+      "hard": [
+        "GEN-06"
+      ],
+      "reason": "项目预算不足"
+    }
+  },
+  "metrics": {
+    "total": 4,
+    "completed": 3,
+    "completion_rate": 0.75,
+    "manual_rate": 0.5,
+    "average_processing_seconds": 0.21085766666666664,
+    "average_end_to_end_seconds": 0.217218
+  },
+  "status": "passed",
+  "finished_at": "2026-11-12T09:40:57.689374+08:00"
+}

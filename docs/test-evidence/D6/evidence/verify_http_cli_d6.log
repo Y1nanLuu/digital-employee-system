@@ -1,0 +1,52 @@
+PASS: enterprise task awaits human review
+PASS: same task resubmitted with revision 2
+PASS: approver can read old original metadata
+PASS: persisted approval survives real tool failure
+PASS: failed task withdrawal rejected
+PASS: CLI continues original human approval once
+PASS: CLI synchronizes current revision audit
+PASS: recovered result persists across process restart
+PASS: lost response retains original writeback decision
+PASS: CLI retrieves original receipt and updates audit
+PASS: two applications produce exactly two financial receipts
+Traceback (most recent call last):
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\shutil.py", line 620, in _rmtree_unsafe
+    os.unlink(fullname)
+PermissionError: [WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'C:\\Users\\Sara\\Documents\\Codex\\2026-11-07\\ni\\work\\repo-d6\\digital-employee-system-master\\work\\enterprise-http-qehwwmjl\\finance.db'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py", line 878, in onerror
+    _os.unlink(path)
+PermissionError: [WinError 32] 另一个程序正在使用此文件，进程无法访问。: 'C:\\Users\\Sara\\Documents\\Codex\\2026-11-07\\ni\\work\\repo-d6\\digital-employee-system-master\\work\\enterprise-http-qehwwmjl\\finance.db'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-d6\digital-employee-system-master\docs\test-evidence\backend-fix-20261112\verify_http_cli.py", line 57, in <module>
+    with tempfile.TemporaryDirectory(prefix='enterprise-http-', dir=ROOT / 'work') as folder:
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py", line 904, in __exit__
+    self.cleanup()
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py", line 908, in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py", line 890, in _rmtree
+    _shutil.rmtree(name, onerror=onerror)
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\shutil.py", line 759, in rmtree
+    return _rmtree_unsafe(path, onerror)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\shutil.py", line 622, in _rmtree_unsafe
+    onerror(os.unlink, fullname, sys.exc_info())
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py", line 881, in onerror
+    cls._rmtree(path, ignore_errors=ignore_errors)
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py", line 890, in _rmtree
+    _shutil.rmtree(name, onerror=onerror)
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\shutil.py", line 759, in rmtree
+    return _rmtree_unsafe(path, onerror)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\shutil.py", line 603, in _rmtree_unsafe
+    onerror(os.scandir, path, sys.exc_info())
+  File "C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\shutil.py", line 600, in _rmtree_unsafe
+    with os.scandir(path) as scandir_it:
+         ^^^^^^^^^^^^^^^^
+NotADirectoryError: [WinError 267] 目录名称无效。: 'C:\\Users\\Sara\\Documents\\Codex\\2026-11-07\\ni\\work\\repo-d6\\digital-employee-system-master\\work\\enterprise-http-qehwwmjl\\finance.db'

@@ -1,0 +1,37 @@
+{
+  "checks": [
+    {
+      "name": "employee workbench and dual entries",
+      "passed": true
+    },
+    {
+      "name": "receipt intake upload control visible",
+      "passed": true
+    },
+    {
+      "name": "PDF uploaded and receipt review rendered",
+      "passed": true
+    },
+    {
+      "name": "approver workbench loads",
+      "passed": true
+    },
+    {
+      "name": "admin metrics loads",
+      "passed": true
+    },
+    {
+      "name": "no unhandled page errors",
+      "passed": true
+    }
+  ],
+  "page_errors": [],
+  "screenshots": [
+    "d6_ui_login.png",
+    "d6_ui_employee_home.png",
+    "d6_ui_receipt_review.png",
+    "d6_ui_my_reports.png",
+    "d6_ui_approver.png",
+    "d6_ui_admin_metrics.png"
+  ]
+}

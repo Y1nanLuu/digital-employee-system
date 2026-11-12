@@ -1,0 +1,6 @@
+PASS: employee workbench and dual entries
+PASS: receipt intake upload control visible
+PASS: PDF uploaded and receipt review rendered
+PASS: approver workbench loads
+PASS: admin metrics loads
+PASS: no unhandled page errors

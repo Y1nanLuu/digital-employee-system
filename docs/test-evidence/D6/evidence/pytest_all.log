@@ -1,0 +1,64 @@
+........................................................................ [ 32%]
+.............................................F.......................... [ 65%]
+........................................................................ [ 98%]
+....                                                                     [100%]
+================================== FAILURES ===================================
+_________________ test_archive_backup_and_new_folder_restore __________________
+
+v2 = (<starlette.testclient.TestClient object at 0x00000183768B1890>, <starlette.testclient.TestClient object at 0x0000018376092E90>)
+tmp_path = WindowsPath('C:/Users/Sara/AppData/Local/Temp/pytest-of-Sara/pytest-6/test_archive_backup_and_new_fo0')
+
+    def test_archive_backup_and_new_folder_restore(v2,tmp_path):
+        from scripts.archive_backup import backup,restore
+        from app import files
+        from finance.main import engine as finance_engine
+        from app.database import engine
+        import sqlite3
+        c,_=v2;data,s,body=upload(c);task=submit(c,body)
+        archive=tmp_path/'backup.zip';target=tmp_path/'restored'
+>       backup(__import__('pathlib').Path(engine.url.database),__import__('pathlib').Path(finance_engine.url.database),files.root(),archive)
+
+backend\tests\test_enterprise_review.py:273: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\archive_backup.py:12: in backup
+    with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='archive-backup-',ignore_cleanup_errors=True) as scratch:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py:854: in __init__
+    self.name = mkdtemp(suffix, prefix, dir)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+suffix = '', prefix = 'archive-backup-'
+dir = WindowsPath('C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d6/digital-employee-system-master/work')
+
+    def mkdtemp(suffix=None, prefix=None, dir=None):
+        """User-callable function to create and return a unique temporary
+        directory.  The return value is the pathname of the directory.
+    
+        Arguments are as for mkstemp, except that the 'text' argument is
+        not accepted.
+    
+        The directory is readable, writable, and searchable only by the
+        creating user.
+    
+        Caller is responsible for deleting the directory when done with it.
+        """
+    
+        prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
+    
+        names = _get_candidate_names()
+        if output_type is bytes:
+            names = map(_os.fsencode, names)
+    
+        for seq in range(TMP_MAX):
+            name = next(names)
+            file = _os.path.join(dir, prefix + name + suffix)
+            _sys.audit("tempfile.mkdtemp", file)
+            try:
+>               _os.mkdir(file, 0o700)
+E               FileNotFoundError: [WinError 3] 系统找不到指定的路径。: 'C:\\Users\\Sara\\Documents\\Codex\\2026-11-07\\ni\\work\\repo-d6\\digital-employee-system-master\\work\\archive-backup-5bl1nwx0'
+
+C:\Users\Sara\AppData\Local\Programs\Python\Python311\Lib\tempfile.py:368: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED backend\tests\test_enterprise_review.py::test_archive_backup_and_new_folder_restore
+1 failed, 219 passed, 1 warning in 60.62s (0:01:00)

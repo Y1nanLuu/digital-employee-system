@@ -1,0 +1,22 @@
+PASS  重启前任务进入 awaiting_approval
+PASS  重启后待审批任务仍在且编号不变
+PASS  重启不改变既有事件序列
+PASS  重启后可继续审批并续跑至终态
+PASS  续跑事件接在原序列之后
+PASS  同一幂等键重启后重放返回原任务
+PASS  可在中断前观测到执行中任务
+PASS  中断任务在下次启动后被标记 failed
+PASS  失败原因标记为进程中断
+PASS  保留中断前状态用于对账
+PASS  记录中断发生的阶段
+PASS  失败任务的事件流以 failed 结束
+PASS  受限恢复命令执行成功
+PASS  恢复后任务离开 failed 状态
+PASS  恢复后重新执行阈值校验（800元自动通过）
+PASS  恢复事件记录操作者与原因
+PASS  恢复不新增审批记录
+PASS  恢复结果已持久化并可查询
+PASS  终态任务拒绝恢复(409)
+
+总计 19 项，通过 19 项，失败 0 项
+临时数据目录：C:\Users\Sara\Documents\Codex\2026-11-07\ni\work\repo-d6\digital-employee-system-master\work\restart-snjxigv0

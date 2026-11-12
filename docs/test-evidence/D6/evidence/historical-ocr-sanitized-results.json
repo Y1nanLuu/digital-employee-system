@@ -1,0 +1,46 @@
+[
+  {
+    "sample": 1,
+    "derived_format": ".png",
+    "total_correct": true,
+    "date_present": true,
+    "number_length": 20,
+    "buyer_found": true,
+    "seller_found": true,
+    "item_found": true,
+    "low_confidence": false
+  },
+  {
+    "sample": 2,
+    "derived_format": ".jpg",
+    "total_correct": true,
+    "date_present": true,
+    "number_length": 20,
+    "buyer_found": true,
+    "seller_found": true,
+    "item_found": true,
+    "low_confidence": false
+  },
+  {
+    "sample": 3,
+    "derived_format": ".pdf",
+    "total_correct": true,
+    "date_present": true,
+    "number_length": 20,
+    "buyer_found": true,
+    "seller_found": true,
+    "item_found": true,
+    "low_confidence": true
+  },
+  {
+    "sample": 4,
+    "derived_format": ".png",
+    "total_correct": true,
+    "date_present": true,
+    "number_length": 20,
+    "buyer_found": true,
+    "seller_found": true,
+    "item_found": true,
+    "low_confidence": true
+  }
+]
