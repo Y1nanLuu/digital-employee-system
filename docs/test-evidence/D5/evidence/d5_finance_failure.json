@@ -1,0 +1,141 @@
+{
+  "created_at": "2026-11-11T14:13:36.832986+08:00",
+  "http_status": 201,
+  "passed": true,
+  "task": {
+    "id": "96cc28f3-41b6-4177-b948-1cba7b1d7b30",
+    "owner": "employee",
+    "status": "failed",
+    "payload": {
+      "project_id": "P001",
+      "category": "交通费",
+      "amount": "300.00",
+      "expense_date": "2026-11-11",
+      "description": "财务服务停止后的故障注入任务",
+      "confirmed": true
+    },
+    "result": {
+      "mode": "structured_input",
+      "execution_stage": "budget_query",
+      "error": "无法连接模拟财务服务"
+    },
+    "citations": [
+      {
+        "id": "DEMO-01",
+        "text": "受理金额大于0且不超过5000元、信息完整的报销申请。",
+        "source": "模拟费用报销制度",
+        "version": "demo-v1",
+        "retrieved_at": "2026-11-11T06:13:34.775613+00:00"
+      },
+      {
+        "id": "DEMO-02",
+        "text": "交通费、办公用品为有明确依据的类别；其他类别须人工确认适用依据。",
+        "source": "模拟费用报销制度",
+        "version": "demo-v1",
+        "retrieved_at": "2026-11-11T06:13:34.775613+00:00"
+      },
+      {
+        "id": "DEMO-03",
+        "text": "金额不超过1000元且满足其他规则可自动通过初审；超过1000元须人工审批。",
+        "source": "模拟费用报销制度",
+        "version": "demo-v1",
+        "retrieved_at": "2026-11-11T06:13:34.775613+00:00"
+      },
+      {
+        "id": "DEMO-04",
+        "text": "申请金额不得超过项目可用预算。",
+        "source": "模拟费用报销制度",
+        "version": "demo-v1",
+        "retrieved_at": "2026-11-11T06:13:34.775613+00:00"
+      },
+      {
+        "id": "DEMO-05",
+        "text": "审批记录操作者、时间、意见和结果，提交人不得审批本人任务。",
+        "source": "模拟费用报销制度",
+        "version": "demo-v1",
+        "retrieved_at": "2026-11-11T06:13:34.775613+00:00"
+      }
+    ],
+    "logs": [
+      {
+        "at": "2026-11-11T06:13:34.782907+00:00",
+        "task_id": "96cc28f3-41b6-4177-b948-1cba7b1d7b30",
+        "stage": "budget_query",
+        "tool": "/budgets/P001",
+        "endpoint": "http://127.0.0.1:18001/budgets/P001",
+        "method": "GET",
+        "request": null,
+        "success": false,
+        "error": "无法连接模拟财务服务",
+        "error_code": "ConnectError",
+        "duration_ms": 2031.77
+      }
+    ],
+    "events": [
+      {
+        "at": "2026-11-11T06:13:34.775613+00:00",
+        "task_id": "96cc28f3-41b6-4177-b948-1cba7b1d7b30",
+        "status": "running",
+        "message": "按确认字段、有效制度与预算执行初审"
+      },
+      {
+        "at": "2026-11-11T06:13:36.815030+00:00",
+        "task_id": "96cc28f3-41b6-4177-b948-1cba7b1d7b30",
+        "status": "failed",
+        "message": "无法连接模拟财务服务",
+        "failure_stage": "budget_query",
+        "error_code": null
+      }
+    ],
+    "approvals": [],
+    "created_at": "2026-11-11T06:13:34.767591+00:00",
+    "finished_at": "2026-11-11T06:13:36.815030+00:00",
+    "manual": false,
+    "submission_payload": {
+      "project_id": "P001",
+      "category": "交通费",
+      "amount": "300.00",
+      "expense_date": "2026-11-11",
+      "description": "财务服务停止后的故障注入任务",
+      "confirmed": true,
+      "parse_id": null,
+      "invoice_id": null,
+      "conflict_acknowledged": false,
+      "confirmation_note": ""
+    },
+    "parse_snapshot": {
+      "mode": "structured_input",
+      "suggested_amount": null,
+      "suggested_category": null,
+      "amount_candidates": [],
+      "conflicts": [],
+      "requires_manual_review": false,
+      "requires_confirmation": true,
+      "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+      "source": "structured_input"
+    },
+    "confirmations": [
+      {
+        "at": "2026-11-11T06:13:34.767591+00:00",
+        "actor": "employee",
+        "confirmed": true,
+        "conflicts": [],
+        "conflict_acknowledged": false,
+        "note": "",
+        "final_fields": {
+          "project_id": "P001",
+          "category": "交通费",
+          "amount": "300.00",
+          "expense_date": "2026-11-11",
+          "description": "财务服务停止后的故障注入任务",
+          "confirmed": true
+        }
+      }
+    ],
+    "amendments": [],
+    "failure_stage": "budget_query"
+  },
+  "error_logs": [
+    "无法连接模拟财务服务"
+  ]
+}

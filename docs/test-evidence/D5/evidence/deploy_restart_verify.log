@@ -1,0 +1,2 @@
+{"checked_at": "2026-11-11T14:16:53.002589+08:00", "task_id": "64ec955f-f377-4447-9f7f-e8c7f9eb8e7b", "before_restart_status": "awaiting_approval", "after_restart_lookup_status": "awaiting_approval", "approval_http_status": 200, "final_status": "succeeded", "event_statuses": ["running", "awaiting_approval", "running", "writing_back", "succeeded"], "passed": true}
+PASS pending task persisted across backend restart and approval resumed

@@ -1,0 +1,9 @@
+file:///C:/Users/Sara/Documents/Codex/d5-deploy-20261111/scripts/browser_smoke.mjs:48
+    if (child.exitCode !== null) throw new Error('本机测试服务提前退出，请查看work/browser-smoke-services.log')
+                                       ^
+
+Error: 本机测试服务提前退出，请查看work/browser-smoke-services.log
+    at ready (file:///C:/Users/Sara/Documents/Codex/d5-deploy-20261111/scripts/browser_smoke.mjs:48:40)
+    at async file:///C:/Users/Sara/Documents/Codex/d5-deploy-20261111/scripts/browser_smoke.mjs:68:3
+
+Node.js v24.13.0

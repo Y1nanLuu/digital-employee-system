@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-11-11T14:35:24.074949+08:00",
+  "backend": "http://127.0.0.1:18000",
+  "records": {
+    "auto_approve": {
+      "http": 201,
+      "id": "1da52b1b-2a3d-4ef1-85e1-5c8c52939bea",
+      "status": "succeeded",
+      "logs": 2,
+      "citations": 5
+    },
+    "manual_approve": {
+      "create_http": 201,
+      "initial_status": "awaiting_approval",
+      "id": "fef8988b-1030-45af-918d-e36e29d9a251",
+      "approval_http": 200,
+      "final_status": "succeeded",
+      "logs": 3,
+      "approvals": 1
+    },
+    "manual_reject": {
+      "create_http": 201,
+      "initial_status": "awaiting_approval",
+      "id": "6a252fd2-59ec-4433-8545-c0909fb9824c",
+      "approval_http": 200,
+      "final_status": "rejected",
+      "receipt_decision": "rejected",
+      "approvals": 1
+    },
+    "budget_reject": {
+      "http": 201,
+      "id": "0081fc90-aab5-43fe-be0c-2a7a63bb34a2",
+      "status": "rejected",
+      "reason": "项目预算不足",
+      "manual": false
+    }
+  },
+  "checks": {
+    "auto_approve": true,
+    "manual_approve": true,
+    "manual_reject": true,
+    "budget_reject": true
+  },
+  "passed": true
+}

@@ -1,0 +1,13 @@
+PASS health version/stage visible 
+PASS invalid amount negative returns 422 
+PASS invalid amount three_decimals returns 422 
+PASS invalid amount boolean returns 422 
+PASS invalid amount exponent returns 422 
+PASS invalid amounts create no task 
+PASS integer amount serialized to two decimals 
+PASS concurrent approval fixture awaiting_approval 
+PASS concurrent approval only one succeeds 
+PASS admin account cannot approve (403) 
+PASS employee nonexistent task returns 404 
+PASS no auth tasks returns 401 
+TOTAL=12 PASS=12 FAIL=0

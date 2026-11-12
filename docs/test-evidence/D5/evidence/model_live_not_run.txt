@@ -1,0 +1,4 @@
+D5 independent real-model success verification was NOT executed.
+Reason: DEEPSEEK_API_KEY and GLM_API_KEY are not set in the test environment.
+Executed instead: AI_MODULE_ENABLED=true + deepseek config without key -> rule_fallback / llm_api_key_missing; task -> awaiting_approval.
+Impact: DF-003 success/timeout/invalid-output evidence must be supplied by the model/integration owner on the same candidate version.

@@ -1,0 +1,10 @@
+{
+  "Path": "C:\\Users\\Sara\\Downloads\\digital-employee-system-master (3).zip",
+  "Length": 4797562,
+  "SHA256": "6C126683AA771F17167F474D8A3B5F161150E75340A70817252864D377025B0D",
+  "CandidateVersion": "0.4.0",
+  "CandidateStageDefault": "D4-baseline",
+  "DeploymentOverrideStage": "D5-candidate",
+  "SourceFileCount": 252,
+  "TestedAt": "2026-11-11 14:36:11 +08:00"
+}

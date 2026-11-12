@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-11-11T14:29:16.910171+08:00",
+  "upload_http_status": 200,
+  "task_http_status": 201,
+  "invoice_id": "e2debf59-1192-49c1-b339-7936d4d8eabb",
+  "hints": {
+    "invoice_no": "12345678",
+    "expense_date": "2026-11-10"
+  },
+  "task_id": "e66a9a03-806e-4c6e-96e0-d81e9b594c3f",
+  "task_status": "succeeded",
+  "passed": true
+}
+PASS invoice PDF upload and task snapshot
