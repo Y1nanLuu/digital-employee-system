@@ -36,6 +36,25 @@ def finance_transport(patch, finance, *, fail_path=None, save_first=False, avail
                   lambda **kwargs: real_client(transport=httpx.MockTransport(dispatch), **kwargs))
 
 
+@pytest.mark.parametrize('response_lost',[False,True])
+def test_terminal_reject_writeback_recovery_preserves_decision(v2,monkeypatch,response_lost):
+    client,finance=v2
+    _,_,body=upload(client,'26000000000000000999')
+    task=submit(client,body)
+    with monkeypatch.context() as patch:
+        finance_transport(patch,finance,fail_path='/reviews/results',save_first=response_lost)
+        failed=approve(client,task,'reject',comment='终止原因必须保留').json()
+    assert failed['status']=='failed' and failed['result']['decision']=='rejected'
+    assert failed['approvals'][-1]['decision']=='reject'
+    with SessionLocal() as db:
+        row=db.get(Task,task['id']);services.recover(row,'replay-writeback','test-ops','恢复拒绝结果',db)
+    final=client.get('/api/tasks/'+task['id'],auth=('employee','demo123')).json()
+    assert final['status']=='rejected' and final['result']['reason']=='终止原因必须保留'
+    assert final['result']['receipt']['decision']=='rejected'
+    assert len(final['approvals'])==1
+    assert final['revisions'][-1]['snapshot']['review_record']['status']=='rejected'
+
+
 def detail(client, task):
     return client.get('/api/tasks/' + task['id'], auth=('employee', 'demo123')).json()
 

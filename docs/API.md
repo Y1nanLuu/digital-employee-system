@@ -38,13 +38,16 @@ invoice保存invoice_no、invoice_code、invoice_date、buyer、seller、total�
 
 ## 流转与指标
 
-queued→running→awaiting_approval或writing_back→succeeded/rejected；人工驳回进入returned，员工重提回到running；本人returned/awaiting_approval申请可撤销为cancelled。failed只能按受控恢复命令核对处置，不能通过员工撤销接口关闭。业务日志记录具体解析、检索、工具、初审步骤，前端展示中文状态。
+queued→running→awaiting_approval或writing_back→succeeded/rejected；人工退回补充进入returned；人工拒绝写回最终结果后进入rejected，员工重提回到running；本人returned/awaiting_approval申请可撤销为cancelled。failed只能按受控恢复命令核对处置，不能通过员工撤销接口关闭。业务日志记录具体解析、检索、工具、初审步骤，前端展示中文状态。
 
 completion_rate=(succeeded+rejected)/全部任务；manual_rate=进入过人工环节的任务数/全部任务；average_processing_seconds扣除awaiting_approval和returned等待，average_end_to_end_seconds保留等待。分母为零返回null；业务拒绝单列，不混为系统执行失败。
 
 受限恢复按当前revision识别已保存的人工决定：本修订已有通过决定时，重新核对预算、原件、查验及查重后继续写回，不新增审批记录或再次计入人工等待；其他修订的决定不用于当前修订。恢复后硬规则仍可拒绝。写回结果未知时仅按原task_id和pending_writeback重放，确认有效凭证后终态。恢复成功或再次失败均同步当前修订的review_record，保留此前修订、原始申请及历史失败日志。操作命令见部署说明。
 
 
-最新交互契约补充：Task增加business_no，内部id保持UUID。POST /api/tasks/{id}/withdraw仅允许本人returned/awaiting_approval申请，进入cancelled且释放占用、保留档案，不写财务结果。管理员与审批人均可审批；生产v2人工reject归为return，页面仅显示通过和驳回。上传先内存检查，失败422且不保存任何原件、快照或任务；仅合格项进入批次。处理本张的HTTP请求不锁住下一张草稿保存。
+最新交互契约补充：Task增加business_no，内部id保持UUID。POST /api/tasks/{id}/withdraw仅允许本人returned/awaiting_approval申请，进入cancelled且释放占用、保留档案，不写财务结果。管理员与审批人均可审批；生产v2人工reject保留拒绝语义，页面分别提供通过、退回补充、拒绝并终止。上传先内存检查，失败422且不保存任何原件、快照或任务；仅合格项进入批次。处理本张的HTTP请求不锁住下一张草稿保存。
 
 最新补充：发起报销不展示历史申请或历史批次选择，仅恢复当前会话未完成草稿。历史统一在我的报销。状态筛选仅已通过、待审批、驳回待修改三类（可查看全部）。上传归档前及队列创建前查重，重复时提示原业务编号；已通过禁止重报，可撤销原申请先撤销再上传。同批重复项排除。invoice_files.invoice_fields完整保存原票号码、日期、购销方、总额和明细，原始识别与任务确认值分别留存。新增AC61及对应待测用例，最终组合测试按用户要求留待集中执行。
+
+
+2026年11月12日审批终态修订：approve核对工具后写回；return只退回补充，不写最终财务结果，员工可沿原编号修订；reject保留拒绝原因及审批记录，写回模拟财务服务，凭证确认后rejected终止。终态禁止原单重提、撤销和重复审批。拒绝写回失败进入failed并保留拒绝决定和pending_writeback，受控恢复重放原决定，不得改成通过。

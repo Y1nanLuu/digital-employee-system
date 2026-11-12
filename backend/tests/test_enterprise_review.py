@@ -262,8 +262,10 @@ def test_employee_draft_is_not_visible_to_approver(v2):
     assert not c.get('/api/tasks/'+task['id'],auth=('approver','demo123')).json()['return_draft']
 
 
-def test_archive_backup_and_new_folder_restore(v2,tmp_path):
+def test_archive_backup_and_new_folder_restore(v2,tmp_path,monkeypatch):
     from scripts.archive_backup import backup,restore
+    from scripts import archive_backup
+    monkeypatch.setattr(archive_backup,'ROOT',tmp_path/'clean-checkout')
     from app import files
     from finance.main import engine as finance_engine
     from app.database import engine
@@ -271,6 +273,7 @@ def test_archive_backup_and_new_folder_restore(v2,tmp_path):
     c,_=v2;data,s,body=upload(c);task=submit(c,body)
     archive=tmp_path/'backup.zip';target=tmp_path/'restored'
     backup(__import__('pathlib').Path(engine.url.database),__import__('pathlib').Path(finance_engine.url.database),files.root(),archive)
+    assert (tmp_path/'clean-checkout/work').is_dir()
     manifest=restore(archive,target)
     assert len(manifest['files'])>=3
     with sqlite3.connect(target/'tasks.db') as db:
@@ -340,9 +343,9 @@ def test_business_number_mapping_is_stable_and_sequential(v2):
     assert first['id']!=first['business_no']
 
 
-def test_admin_reject_returns_to_employee_who_can_withdraw(v2):
+def test_admin_return_allows_employee_to_withdraw(v2):
     c,_=v2;_,_,body=upload(c,'26000000000000000999');task=submit(c,body)
-    rejected=c.post('/api/tasks/'+task['id']+'/approval',auth=('admin','demo123'),json={'decision':'reject','comment':'请补充业务证明'})
+    rejected=c.post('/api/tasks/'+task['id']+'/approval',auth=('admin','demo123'),json={'decision':'return','comment':'请补充业务证明'})
     assert rejected.status_code==200,rejected.text
     assert rejected.json()['status']=='returned' and not rejected.json()['result'].get('receipt')
     assert c.post('/api/tasks/'+task['id']+'/withdraw',auth=('admin','demo123')).status_code==404
@@ -356,6 +359,21 @@ def test_admin_reject_returns_to_employee_who_can_withdraw(v2):
     with SessionLocal() as db:assert not db.scalar(select(InvoiceClaim).where(InvoiceClaim.task_id==task['id']))
     retry=submit(c,body)
     assert retry['status']=='awaiting_approval'
+
+
+def test_admin_reject_terminates_and_writes_final_reason(v2):
+    c,_=v2;_,_,body=upload(c,'26000000000000000999');task=submit(c,body)
+    reason='费用与公司业务无关，拒绝本次报销'
+    response=c.post('/api/tasks/'+task['id']+'/approval',auth=('admin','demo123'),json={'decision':'reject','comment':reason})
+    assert response.status_code==200,response.text
+    final=response.json()
+    assert final['status']=='rejected' and final['finished_at']
+    assert final['result']['reason']==reason and final['result']['receipt']['decision']=='rejected'
+    assert final['approvals'][-1]['decision']=='reject'
+    assert final['revisions'][-1]['snapshot']['review_record']['status']=='rejected'
+    assert c.post('/api/tasks/'+task['id']+'/resubmit',json={**body,'revision_reason':'原单不可重提'},auth=('employee','demo123'),headers={'Idempotency-Key':str(uuid4())}).status_code==409
+    assert c.post('/api/tasks/'+task['id']+'/withdraw',auth=('employee','demo123')).status_code==409
+    assert approve(c,final,'reject').status_code==409
 
 
 def test_admin_can_approve_but_cannot_modify_or_withdraw_completed(v2):

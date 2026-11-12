@@ -380,8 +380,6 @@ def approval(task_id: str, body: ApprovalInput, db: Session = Depends(get_db), u
             raise HTTPException(409, '任务不在待审批状态，请勿重复处理')
         if config.ACTIVE_POLICY_VERSION!='demo-v1' and body.corrected_fields is not None:
             raise HTTPException(422,'审批人不能修改员工字段，请退回补充')
-        if config.ACTIVE_POLICY_VERSION!='demo-v1' and body.decision=='reject':
-            body=body.model_copy(update={'decision':'return'})
         if config.ACTIVE_POLICY_VERSION!='demo-v1' and task.policy_version=='demo-v1' and body.decision=='return':
             policy=policies.register(db)
             if not db.scalar(select(TaskRevision).where(TaskRevision.task_id==task.id,TaskRevision.number==task.revision)):
