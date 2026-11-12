@@ -24,3 +24,10 @@ ai-module/eval/api_keys.env
 ~$*
 # 本地私有模型覆盖配置（各人按自己的通道复制一份，不进库）
 ai-module/model_config.local*.json
+
+# 个人材料与本地交付物（按要求不入库）
+docs/张程量-个人总结.md
+docs/张程量-个人总结*.md
+3 系统架构设计文档（系统工程师）*.docx
+验收汇报_*.pptx
+数字员工系统每日任务与验收计划.docx
