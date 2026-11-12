@@ -1,0 +1,3 @@
+Real DeepSeek success was not independently re-executed in D6 because DEEPSEEK_API_KEY is unset.
+Historical 9-check real-model browser evidence exists under docs/test-evidence/enterprise-v2/evidence/real-model-browser-results.json.
+D6 four-scenario HTTP test used a deterministic OpenAI-compatible mock and is not a model-accuracy evaluation.

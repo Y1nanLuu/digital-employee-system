@@ -1,0 +1,11 @@
+PASS: enterprise task awaits human review
+PASS: same task resubmitted with revision 2
+PASS: approver can read old original metadata
+PASS: persisted approval survives real tool failure
+PASS: failed task withdrawal rejected
+PASS: CLI continues original human approval once
+PASS: CLI synchronizes current revision audit
+PASS: recovered result persists across process restart
+PASS: lost response retains original writeback decision
+PASS: CLI retrieves original receipt and updates audit
+PASS: two applications produce exactly two financial receipts

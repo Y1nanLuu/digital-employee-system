@@ -1,0 +1,3 @@
+Docker/PostgreSQL was not independently executed in the D6 tester environment.
+Command check: docker is not recognized.
+Historical developer evidence in docs/DEPLOYMENT.md and RELEASE.md was reviewed but is not converted into D6 independent PASS.

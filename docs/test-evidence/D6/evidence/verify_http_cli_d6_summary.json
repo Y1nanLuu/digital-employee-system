@@ -1,0 +1,261 @@
+{
+  "checks": [
+    {
+      "label": "enterprise task awaits human review",
+      "passed": true
+    },
+    {
+      "label": "same task resubmitted with revision 2",
+      "passed": true
+    },
+    {
+      "label": "approver can read old original metadata",
+      "passed": true
+    },
+    {
+      "label": "persisted approval survives real tool failure",
+      "passed": true
+    },
+    {
+      "label": "failed task withdrawal rejected",
+      "passed": true
+    },
+    {
+      "label": "CLI continues original human approval once",
+      "passed": true
+    },
+    {
+      "label": "CLI synchronizes current revision audit",
+      "passed": true
+    },
+    {
+      "label": "recovered result persists across process restart",
+      "passed": true
+    },
+    {
+      "label": "lost response retains original writeback decision",
+      "passed": true
+    },
+    {
+      "label": "CLI retrieves original receipt and updates audit",
+      "passed": true
+    },
+    {
+      "label": "two applications produce exactly two financial receipts",
+      "passed": true
+    }
+  ],
+  "passed": 11,
+  "failed": 0,
+  "receipt_count": 2,
+  "model_mode": "disabled; human approval with real mock-finance HTTP service",
+  "tasks": [
+    {
+      "id": "66dede04-8923-4291-8301-aecb2e9399a0",
+      "status": "succeeded",
+      "revision": 2,
+      "approvals": [
+        {
+          "at": "2026-11-12T01:33:36.967489+00:00",
+          "actor": "approver",
+          "decision": "return",
+          "comment": "请更换原件",
+          "manual_basis": "",
+          "revision": 1
+        },
+        {
+          "at": "2026-11-12T01:33:37.214284+00:00",
+          "actor": "approver",
+          "decision": "approve",
+          "comment": "原票和用途核对通过",
+          "manual_basis": "",
+          "revision": 2
+        }
+      ],
+      "result": {
+        "field_analysis": {
+          "mode": "rule_baseline",
+          "suggested_amount": "300.00",
+          "suggested_category": "交通费",
+          "amount_candidates": [
+            {
+              "raw": "300.00",
+              "amount": "300.00",
+              "valid": true
+            }
+          ],
+          "conflicts": [],
+          "requires_manual_review": false,
+          "requires_confirmation": true,
+          "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+          "ai_enabled": false
+        },
+        "mode": "rule_baseline",
+        "execution_stage": "writeback",
+        "budget": {
+          "project_id": "P001",
+          "available": "10000.00",
+          "currency": "CNY",
+          "simulated": true
+        },
+        "invoice_check": {
+          "task_id": "66dede04-8923-4291-8301-aecb2e9399a0",
+          "invoice_no": "26000000000000000888",
+          "status": "unknown",
+          "reason": "模拟台账无此票据，须人工核对；格式合格不等于验真成功",
+          "simulated": true
+        },
+        "duplicate_check": {
+          "task_id": "66dede04-8923-4291-8301-aecb2e9399a0",
+          "invoice_no": "26000000000000000888",
+          "duplicate": false,
+          "suspected": false,
+          "reference_task_id": null,
+          "simulated": true
+        },
+        "rule_findings": {
+          "hard": [],
+          "manual": [
+            {
+              "code": "INV-04",
+              "message": "模拟台账未知，请人工核对票据"
+            }
+          ],
+          "facts": {}
+        },
+        "initial_review": {
+          "conclusion": "存疑",
+          "reasons": [
+            "模型初审不可用，请人工核对"
+          ],
+          "citation_ids": [],
+          "source": "rule_fallback",
+          "error_code": "llm_disabled",
+          "latency_ms": 0.01
+        },
+        "initial_decision": "存疑",
+        "manual_reasons": [
+          "模拟台账未知，请人工核对票据",
+          "模型初审需人工核对：模型初审不可用，请人工核对"
+        ],
+        "reason": "原票和用途核对通过",
+        "decision": "approved",
+        "receipt": {
+          "task_id": "66dede04-8923-4291-8301-aecb2e9399a0",
+          "decision": "approved",
+          "reason": "原票和用途核对通过",
+          "invoice_no": "26000000000000000888",
+          "invoice_code": "",
+          "owner": "employee",
+          "amount": "300.00",
+          "expense_date": "2026-11-12",
+          "file_sha256": "d5f052ff8f98953f3b3834e486bd1279e609e82fd54de4cde56d6e5efb793047",
+          "receipt_id": "demo-66dede04-8923-4291-8301-aecb2e9399a0",
+          "simulated": true
+        }
+      }
+    },
+    {
+      "id": "e77efef3-f8fb-4084-979f-d0b7491fa98b",
+      "status": "succeeded",
+      "revision": 1,
+      "approvals": [
+        {
+          "at": "2026-11-12T01:33:39.956543+00:00",
+          "actor": "approver",
+          "decision": "approve",
+          "comment": "原票和用途核对通过",
+          "manual_basis": "",
+          "revision": 1
+        }
+      ],
+      "result": {
+        "field_analysis": {
+          "mode": "rule_baseline",
+          "suggested_amount": "300.00",
+          "suggested_category": "交通费",
+          "amount_candidates": [
+            {
+              "raw": "300.00",
+              "amount": "300.00",
+              "valid": true
+            }
+          ],
+          "conflicts": [],
+          "requires_manual_review": false,
+          "requires_confirmation": true,
+          "message": "规则提取建议，请核对金额、类别与日期后再提交。",
+          "ai_enabled": false
+        },
+        "mode": "rule_baseline",
+        "execution_stage": "writeback",
+        "budget": {
+          "project_id": "P001",
+          "available": "10000.00",
+          "currency": "CNY",
+          "simulated": true
+        },
+        "invoice_check": {
+          "task_id": "e77efef3-f8fb-4084-979f-d0b7491fa98b",
+          "invoice_no": "26000000000000000777",
+          "status": "unknown",
+          "reason": "模拟台账无此票据，须人工核对；格式合格不等于验真成功",
+          "simulated": true
+        },
+        "duplicate_check": {
+          "task_id": "e77efef3-f8fb-4084-979f-d0b7491fa98b",
+          "invoice_no": "26000000000000000777",
+          "duplicate": false,
+          "suspected": true,
+          "reference_task_id": null,
+          "simulated": true
+        },
+        "rule_findings": {
+          "hard": [],
+          "manual": [
+            {
+              "code": "INV-04",
+              "message": "模拟台账未知，请人工核对票据"
+            },
+            {
+              "code": "INV-06",
+              "message": "同员工同日同额存在疑似重复，请核对"
+            }
+          ],
+          "facts": {}
+        },
+        "initial_review": {
+          "conclusion": "存疑",
+          "reasons": [
+            "模型初审不可用，请人工核对"
+          ],
+          "citation_ids": [],
+          "source": "rule_fallback",
+          "error_code": "llm_disabled",
+          "latency_ms": 0.01
+        },
+        "initial_decision": "存疑",
+        "manual_reasons": [
+          "模拟台账未知，请人工核对票据",
+          "同员工同日同额存在疑似重复，请核对",
+          "模型初审需人工核对：模型初审不可用，请人工核对"
+        ],
+        "reason": "原票和用途核对通过",
+        "decision": "approved",
+        "receipt": {
+          "task_id": "e77efef3-f8fb-4084-979f-d0b7491fa98b",
+          "decision": "approved",
+          "reason": "原票和用途核对通过",
+          "invoice_no": "26000000000000000777",
+          "invoice_code": "",
+          "owner": "employee",
+          "amount": "300.00",
+          "expense_date": "2026-11-12",
+          "file_sha256": "750b09fa7ef48fac19e089a470835a534875d32f0a439bd79c77bfb7a25f0403",
+          "receipt_id": "demo-e77efef3-f8fb-4084-979f-d0b7491fa98b",
+          "simulated": true
+        }
+      }
+    }
+  ]
+}

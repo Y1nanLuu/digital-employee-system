@@ -1,0 +1,20 @@
+file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/common/QueryHandler.js:211
+                const waitForSelectorError = new (error instanceof TimeoutError ? TimeoutError : Error)(`Waiting for selector \`${selector}\` failed`);
+                                             ^
+
+TimeoutError: Waiting for selector `.hero` failed
+    at CSSQueryHandler.waitFor (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/common/QueryHandler.js:211:46)
+    at async CdpFrame.waitForSelector (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:546:21)
+    ... 2 lines matching cause stack trace ...
+    at async file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d6/digital-employee-system-master/work/browser_smoke_d6_runner.mjs:121:3 {
+  cause: TimeoutError: Waiting failed: 15000ms exceeded
+      at new WaitTask (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/common/WaitTask.js:46:34)
+      at IsolatedWorld.waitForFunction (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/api/Realm.js:49:26)
+      at CSSQueryHandler.waitFor (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/common/QueryHandler.js:176:95)
+      at async CdpFrame.waitForSelector (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:546:21)
+      at async CdpPage.waitForSelector (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d3/digital-employee-system-master/work/browser-driver/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:1482:20)
+      at async login (file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d6/digital-employee-system-master/work/browser_smoke_d6_runner.mjs:110:5)
+      at async file:///C:/Users/Sara/Documents/Codex/2026-11-07/ni/work/repo-d6/digital-employee-system-master/work/browser_smoke_d6_runner.mjs:121:3
+}
+
+Node.js v24.13.0

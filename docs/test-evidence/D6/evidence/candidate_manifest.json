@@ -1,0 +1,70 @@
+{
+  "candidate_zip": "C:\\Users\\Sara\\Downloads\\digital-employee-system-master (4).zip",
+  "candidate_sha256": "F05B561FAC7078340BB43F9F4E572266F727826DCA9B26E1FB0687B9A1D31A43",
+  "candidate_zip_bytes": 6851002,
+  "version": "0.5.0",
+  "stage": "enterprise-review",
+  "policy": "enterprise-demo-v2",
+  "tested_at": "2026-11-12",
+  "environment": {
+    "os": "Windows 11",
+    "python": "3.11.3",
+    "node": "24.13.0",
+    "npm": "11.6.2",
+    "chrome": "157.0.8103.39",
+    "database": "SQLite"
+  },
+  "results": {
+    "pytest_combined": "220 passed, 1 warning",
+    "pytest_clean_first_run": "219 passed, 1 failed (work dir missing)",
+    "enterprise_rules": "198/198",
+    "smoke_demo_v1": "46/46 + 46/46 + 51/51",
+    "restart": "19/19",
+    "http_cli_recovery": "11/11 (patched cleanup runner exit 0)",
+    "four_enterprise_scenarios": "4/4 (mock OpenAI-compatible LLM; not real-model evaluation)",
+    "browser_ui_checks": "6/6",
+    "frontend_default_build": "failed: esbuild config loader Access denied",
+    "frontend_workaround_build": "success: vue-tsc exit 0; vite 128.60 kB JS",
+    "docker_postgres": "not independently run: docker command unavailable",
+    "real_deepseek": "not independently run: key absent; historical 9-check evidence present"
+  },
+  "defects": [
+    {
+      "id": "D6-DEF-01",
+      "severity": "S2",
+      "title": "archive_backup requires work directory in clean checkout",
+      "status": "mitigated for test by mkdir; product fix pending"
+    },
+    {
+      "id": "D6-DEF-02",
+      "severity": "S3",
+      "title": "verify_http_cli TemporaryDirectory cleanup returns exit 1 after 11 checks pass on Windows",
+      "status": "test-harness patched runner exit 0; source script pending fix"
+    },
+    {
+      "id": "DF-001",
+      "severity": "S2",
+      "title": "default Vite config loading fails with Access denied",
+      "status": "open; configLoader runner workaround passed"
+    },
+    {
+      "id": "D6-EVID-01",
+      "severity": "S1",
+      "title": "Docker/PostgreSQL and real DeepSeek not independently reproduced on tester machine",
+      "status": "conditional; historical developer evidence reviewed"
+    },
+    {
+      "id": "D6-DOC-01",
+      "severity": "S3",
+      "title": "legacy browser_smoke.mjs targets .hero and cannot run latest UI",
+      "status": "open; replaced by D6 custom UI smoke"
+    },
+    {
+      "id": "D6-DOC-02",
+      "severity": "S4",
+      "title": "RELEASE.md title says D5 while stage is enterprise-review",
+      "status": "open; version facts otherwise consistent"
+    }
+  ],
+  "recommendation": "有条件通过，可作为课程最终版提交；须在答辩和提交说明中声明前端 workaround、Docker/真实模型未独立复验及 work 目录前置条件。"
+}

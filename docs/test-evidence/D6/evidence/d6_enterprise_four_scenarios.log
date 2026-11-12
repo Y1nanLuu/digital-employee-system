@@ -1,0 +1,15 @@
+PASS health enterprise v0.5
+PASS upload 26000000000000000001 -> 200
+PASS scenario1 automatic succeeded
+PASS upload 26000000000000000991 -> 200
+PASS scenario2 unknown awaits approval
+PASS scenario2 approval succeeded
+PASS upload 26000000000000000992 -> 200
+PASS scenario3 unknown awaits approval
+PASS scenario3 rejection returns for edit
+PASS scenario3 employee withdraws
+PASS upload 26000000000000000993 -> 200
+PASS scenario4 budget insufficient rejected
+PASS duplicate approval returns 409
+PASS metrics visible
+PASS: four enterprise scenarios
