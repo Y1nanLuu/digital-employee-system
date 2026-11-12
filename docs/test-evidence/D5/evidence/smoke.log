@@ -1,0 +1,8 @@
+PASS: verify_system.py — 总计 46 项，通过 46 项，失败 0 项
+PASS: verify_system.py — 总计 46 项，通过 46 项，失败 0 项
+PASS: verify_integration.py — 总计 51 项，通过 51 项，失败 0 项
+PASS: repeated verification with historical pending/failed tasks, without changing their records
+PASS: four-scenario evidence saved to work/smoke-summary.json
+PASS: real HTTP, unique task IDs, task lookup, persisted tasks and receipts, submit idempotency after process restart
+PASS: parse snapshots, atomic amendments, initial-request replay, interrupted writeback detection and CLI reconciliation
+PASS: budget samples, no budget deduction, automatic review, approval resume, budget rejection, metrics

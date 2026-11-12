@@ -1,0 +1,4 @@
+D5 independent verification was NOT executed.
+Command: docker version
+Result: docker is not recognized as a command in the test environment.
+Impact: GATE-01 remains conditionally closed; do not cite D5 as independent Compose/PostgreSQL verification.

@@ -1,0 +1,112 @@
+{
+  "captured_at": "2026-11-11T14:31:40.785539+08:00",
+  "health": {
+    "status": "ok",
+    "mode": "rule_baseline",
+    "version": "0.4.0",
+    "stage": "D5-candidate",
+    "ai_enabled": false,
+    "database": "sqlite"
+  },
+  "metrics": {
+    "total": 20,
+    "completed": 17,
+    "completion_rate": 0.85,
+    "manual_rate": 0.5,
+    "average_processing_seconds": 0.0986339999999997,
+    "average_end_to_end_seconds": 2.802786823529412
+  },
+  "task_count": 20,
+  "status_counts": {
+    "awaiting_approval": 2,
+    "succeeded": 13,
+    "failed": 1,
+    "rejected": 4
+  },
+  "sample_scenarios": [
+    {
+      "id": "bc783d02-10ae-43d4-a98c-cafc864fd169",
+      "status": "awaiting_approval",
+      "amount": "1500.00",
+      "category": "�칫��Ʒ",
+      "description": "��������������Ƭ��ͼ1500Ԫ"
+    },
+    {
+      "id": "e66a9a03-806e-4c6e-96e0-d81e9b594c3f",
+      "status": "succeeded",
+      "amount": "320.00",
+      "category": "��ͨ��",
+      "description": "�ͻ��ֳ��򳵷�320Ԫ"
+    },
+    {
+      "id": "64ec955f-f377-4447-9f7f-e8c7f9eb8e7b",
+      "status": "succeeded",
+      "amount": "1500.00",
+      "category": "�칫��Ʒ",
+      "description": "�������������־û�����1500Ԫ"
+    },
+    {
+      "id": "96cc28f3-41b6-4177-b948-1cba7b1d7b30",
+      "status": "failed",
+      "amount": "300.00",
+      "category": "��ͨ��",
+      "description": "�������ֹͣ��Ĺ���ע������"
+    },
+    {
+      "id": "cd91cc95-b2a3-4eec-808c-8f033ad549f8",
+      "status": "succeeded",
+      "amount": "300.00",
+      "category": "��ͨ��",
+      "description": "�������ֹͣ��Ĺ���ע������"
+    },
+    {
+      "id": "7648f3b1-ced0-4c89-a3d3-8ab266ee3ba8",
+      "status": "succeeded",
+      "amount": "1500.00",
+      "category": "�칫��Ʒ",
+      "description": "�ͻ��ֳ��ɹ��칫��Ʒ1500Ԫ"
+    },
+    {
+      "id": "20ab4683-94de-4888-87f0-0334bde4c0e9",
+      "status": "succeeded",
+      "amount": "300.00",
+      "category": "��ͨ��",
+      "description": "�ͻ��ֳ�������ͨ��300Ԫ"
+    },
+    {
+      "id": "396b9905-8b4b-4b3e-b4ed-9ee2ca30a0f2",
+      "status": "succeeded",
+      "amount": "900.00",
+      "category": "�칫��Ʒ",
+      "description": "�ͻ��ֳ��ɹ��칫��Ʒ1500Ԫ"
+    },
+    {
+      "id": "ec43bfa3-c25e-44d5-a23d-7ad89e636240",
+      "status": "succeeded",
+      "amount": "400.00",
+      "category": "��ͨ��",
+      "description": "�ͻ��ֳ�������ͨ��320Ԫ"
+    },
+    {
+      "id": "a31fbb7a-acf0-4aba-82f6-296162cc17f5",
+      "status": "succeeded",
+      "amount": "320.00",
+      "category": "��ͨ��",
+      "description": "�ͻ��ֳ�������ͨ��320Ԫ"
+    },
+    {
+      "id": "45bab831-1bf8-4bf5-98b0-4e564bb755de",
+      "status": "awaiting_approval",
+      "amount": "300.00",
+      "category": "����",
+      "description": "ר����������300ԪԪ"
+    },
+    {
+      "id": "8e0d324a-3bec-4840-aa0e-2b882faa5096",
+      "status": "rejected",
+      "amount": "600.00",
+      "category": "��ͨ��",
+      "description": "�ͻ��ֳ���ͨ��600Ԫ"
+    }
+  ]
+}

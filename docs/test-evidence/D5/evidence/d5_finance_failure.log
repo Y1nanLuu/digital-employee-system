@@ -1,0 +1,2 @@
+PASS finance unavailable => failed without receipt and readable tool error
+{"status": "failed", "error": "无法连接模拟财务服务", "error_code": null, "logs": ["无法连接模拟财务服务"]}

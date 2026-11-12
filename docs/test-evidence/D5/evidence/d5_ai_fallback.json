@@ -1,0 +1,58 @@
+{
+  "checked_at": "2026-11-11T14:28:29.637079+08:00",
+  "health": {
+    "status": "ok",
+    "mode": "rule_baseline",
+    "version": "0.4.0",
+    "stage": "D5-candidate",
+    "ai_enabled": true,
+    "database": "sqlite"
+  },
+  "parse": {
+    "mode": "rule_fallback",
+    "suggested_amount": "320.00",
+    "suggested_category": "交通费",
+    "amount_candidates": [
+      {
+        "raw": "320",
+        "amount": "320.00",
+        "valid": true
+      }
+    ],
+    "conflicts": [],
+    "requires_manual_review": true,
+    "requires_confirmation": true,
+    "message": "模型不可用，已降级为规则提取；请核对字段，提交后将转人工复核。",
+    "ai_enabled": true,
+    "source": "rule",
+    "model": null,
+    "fields": {},
+    "missing_fields": [
+      "submitter",
+      "department",
+      "expense_type",
+      "amount",
+      "expense_date",
+      "invoice_no",
+      "invoice_title",
+      "description"
+    ],
+    "patched_fields": null,
+    "violations": [],
+    "mapping_reason": "按具体交通、住宿或混合用途映射；无法确定的差旅归为其他",
+    "fallback_event": {
+      "timestamp": "2026-11-11T14:28:29",
+      "trigger": "llm_api_key_missing",
+      "llm_model": "deepseek-flash",
+      "fallback_to": "rule"
+    },
+    "parse_id": "86bef0c5-ea40-49ce-982f-abb8a62c1196",
+    "latency_ms": 9.57
+  },
+  "task_id": "3eea2166-18dc-464c-b30b-df031b8e3adb",
+  "task_status": "awaiting_approval",
+  "manual_reasons": [
+    "模型处理异常，须由审批人核对字段"
+  ],
+  "passed": true
+}
