@@ -1,50 +1,50 @@
 {
-  "total": 190,
-  "pass": 183,
+  "total": 120,
+  "pass": 115,
   "timeout": 0,
   "error": 0,
   "groups": {
-    "normal": {
-      "total": 60,
-      "pass": 60
+    "cat9": {
+      "total": 54,
+      "pass": 53
     },
-    "format": {
-      "total": 40,
-      "pass": 40
-    },
-    "multi": {
-      "total": 20,
-      "pass": 19
-    },
-    "mapping": {
-      "total": 30,
-      "pass": 30
-    },
-    "missing": {
-      "total": 15,
-      "pass": 15
-    },
-    "abnormal": {
-      "total": 15,
-      "pass": 9
-    },
-    "injection": {
+    "amount_edge": {
       "total": 10,
       "pass": 10
+    },
+    "invoice_text": {
+      "total": 20,
+      "pass": 20
+    },
+    "multi": {
+      "total": 10,
+      "pass": 10
+    },
+    "abnormal": {
+      "total": 10,
+      "pass": 6
+    },
+    "injection": {
+      "total": 8,
+      "pass": 8
+    },
+    "missing": {
+      "total": 8,
+      "pass": 8
     }
   },
   "modes": {
-    "llm_pure": 176,
-    "llm_patched": 14
+    "llm_pure": 115,
+    "llm_patched": 5
   },
   "core": {
     "amount": [
-      106,
-      106
+      80,
+      80
     ],
     "category": [
-      97,
-      97
+      79,
+      80
     ]
   },
   "safety_poison_accepted": 0

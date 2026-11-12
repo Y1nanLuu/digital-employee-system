@@ -48,16 +48,16 @@ def test_enabled_rule_channel_returns_structured_fields(config):
     assert result['suggested_category'] == '交通费'
     assert result['suggested_amount'] == '320.00'
     assert result['fields']['submitter'] == '张三'
-    assert result['fields']['expense_type'] == '差旅'
+    assert result['fields']['expense_type'] == '交通费'  # 九类化后 KV 旧名归一
     assert 'missing_fields' in result and 'violations' in result
 
 
 def test_category_mapping_covers_all_ai_types(config):
     config({'active': 'rule'})
-    assert ai.CATEGORY_MAP == {'差旅': '其他', '办公用品': '办公用品', '加班餐补': '其他', '业务招待': '其他'}
+    assert set(ai.CATEGORY_MAP) >= {'交通费', '住宿费', '业务招待费', '办公用品', '通讯费', '培训会议费', '软件服务费', '出差餐补', '其他'}
     result = ai.parse_fields('费用类型：业务招待\n金额：800\n事由：宴请客户')
-    assert result['fields']['expense_type'] == '业务招待'
-    assert result['suggested_category'] == '其他'
+    assert result['fields']['expense_type'] == '业务招待费'
+    assert result['suggested_category'] == '业务招待费'
 
 
 def test_free_text_still_uses_business_baseline(config):

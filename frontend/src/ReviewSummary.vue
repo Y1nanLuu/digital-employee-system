@@ -10,8 +10,8 @@ const findings=computed(()=>{
  const seen=new Set<string>();return items.filter(x=>{const key=x.message.replace(/\s/g,'');if(seen.has(key))return false;seen.add(key);return true})
 })
 const visible=computed(()=>expanded.value?findings.value:findings.value.slice(0,4))
-const conclusion=computed(()=>props.task.status==='cancelled'?'员工已撤销':props.task.status==='returned'?'已驳回，等待员工修改':props.task.status==='succeeded'?'已通过':props.task.status==='rejected'?'初审未通过':props.task.status==='failed'?'处理异常，需恢复':props.task.status==='awaiting_approval'?'需要人工核对':'正在初审')
-const explanation=computed(()=>props.task.status==='returned'?props.task.result.return_reason:findings.value.some(x=>x.blocking)?'发现阻止通过的问题，请核对具体原因。':props.task.status==='awaiting_approval'?`有${findings.value.length||'待核对的'}项问题需要审批人确认。` :props.task.status==='succeeded'?'本次申请已完成核对和登记。':props.task.status==='cancelled'?'本次申请已停止，材料和记录继续保留。':'处理结果以本页实际状态为准。')
+const conclusion=computed(()=>props.task.status==='cancelled'?'员工已撤销':props.task.status==='returned'?'已驳回，等待员工修改':props.task.status==='succeeded'?'已通过':props.task.status==='rejected'?'已拒绝并终止':props.task.status==='failed'?'处理异常，需恢复':props.task.status==='awaiting_approval'?'需要人工核对':'正在初审')
+const explanation=computed(()=>props.task.status==='returned'?props.task.result.return_reason:props.task.status==='rejected'?props.task.result.reason:findings.value.some(x=>x.blocking)?'发现阻止通过的问题，请核对具体原因。':props.task.status==='awaiting_approval'?`有${findings.value.length||'待核对的'}项问题需要审批人确认。` :props.task.status==='succeeded'?'本次申请已完成核对和登记。':props.task.status==='cancelled'?'本次申请已停止，材料和记录继续保留。':'处理结果以本页实际状态为准。')
 const modelReasons=computed(()=>[...new Set(props.task.result.initial_review?.reasons||[])])
 function money(v?:string){return v?'¥'+Number(v).toFixed(2):'尚未查询'}
 </script>

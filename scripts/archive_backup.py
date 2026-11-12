@@ -9,6 +9,7 @@ ROOT=Path(__file__).resolve().parent.parent
 
 def backup(database,finance,files,output):
     if output.exists():raise ValueError('备份目标已存在，请使用新文件名')
+    (ROOT/'work').mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(dir=ROOT/'work',prefix='archive-backup-',ignore_cleanup_errors=True) as scratch:
         temp=Path(scratch)
         for src,name in [(database,'tasks.db'),(finance,'finance.db')]:

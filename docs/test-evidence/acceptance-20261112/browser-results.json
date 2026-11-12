@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "真实HTTP上传、建单、工具日志及人工中断",
+    "管理员三种审批动作及拒绝确认取消",
+    "页面真实拒绝后写回财务凭证并终止",
+    "拒绝终态员工只读，不显示重提或撤销",
+    "退回补充独立保留returned，不产生拒绝终态",
+    "浏览器无未处理错误",
+    "管理端至少三个真实任务指标可查询"
+  ],
+  "errors": [],
+  "model_channel": "disabled; degradation to manual for approval validation"
+}

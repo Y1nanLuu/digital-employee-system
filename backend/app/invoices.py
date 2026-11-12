@@ -216,22 +216,25 @@ def receipt_fields(extracted: dict) -> dict:
     fields={'invoice_no':'','invoice_code':'','invoice_date':None,'buyer':'','seller':'','total':'','item_name':''}
     compact=lambda t:re.sub(r'\s+','',t)
     def right_value(label,pattern=None):
+        # 按阅读顺序(页,行,列)收集并排序: OCR对左边缘的1~2像素抖动会使
+        # 纯按x排序导致购买方/销售方互换或候选错序
         found=[]
         for anchor in spans:
             value=compact(anchor['text'])
             if not re.search(label,value,re.I):continue
             inline=re.split(label,value,maxsplit=1,flags=re.I)[-1].lstrip(':：¥￥ ')
-            if inline and (pattern is None or re.fullmatch(pattern,inline)):found.append((anchor['x'],inline))
+            if inline and (pattern is None or re.fullmatch(pattern,inline)):
+                found.append((anchor['page'],anchor['y'],anchor['x'],inline))
             candidates=[s for s in spans if s['page']==anchor['page'] and s['x']>=anchor['right']-1
                         and abs((s['y']+s['bottom'])/2-(anchor['y']+anchor['bottom'])/2)<max(7,anchor['bottom']-anchor['y'])]
             candidates.sort(key=lambda x:x['x'])
             for s in candidates:
                 v=compact(s['text']).lstrip(':：¥￥')
                 if v and (pattern is None or re.fullmatch(pattern,v)):
-                    found.append((anchor['x'],v));break
-        return sorted(found,key=lambda x:x[0])
+                    found.append((anchor['page'],anchor['y'],anchor['x'],v));break
+        return sorted(found)
     numbers=right_value(r'发票号码|InvoiceNo\.?',r'\d{8,20}')
-    if numbers:fields['invoice_no']=numbers[0][1]
+    if numbers:fields['invoice_no']=numbers[0][-1]
     if not fields['invoice_no']:
         ns=re.findall(r'(?<!\d)\d{20}(?!\d)',text)
         if len(set(ns))==1:fields['invoice_no']=ns[0]
@@ -239,16 +242,16 @@ def receipt_fields(extracted: dict) -> dict:
             m=re.search(r'(?:发票号码|Invoice\s*No\.?)\s*[:：]?\s*(\d{8,20})',text,re.I)
             if m:fields['invoice_no']=m.group(1)
     dates=right_value(r'开票日期',r'\d{4}[-/年.]\d{1,2}[-/月.]\d{1,2}日?')
-    dm=_DATE_RE.search(dates[0][1] if dates else text)
+    dm=_DATE_RE.search(dates[0][-1] if dates else text)
     if dm:
         try:fields['invoice_date']=date(*map(int,dm.groups())).isoformat()
         except ValueError:pass
-    names=right_value(r'名称')
+    names=right_value(r'(?<!项目)名称|Name')  # 排除'项目名称'标签: 其左边缘可比'名称'更靠左, 按x排序会错位为购买方
     # The first two name labels in domestic VAT invoices are buyer then seller.
-    names=[x for x in names if len(x[1])>2 and not re.search(r'项目|规格|单位|数量|单价|金额|税',x[1])]
-    if len(names)>=2:fields['buyer'],fields['seller']=names[0][1],names[1][1]
+    names=[x for x in names if len(x[-1])>2 and not re.search(r'项目|规格|单位|数量|单价|金额|税',x[-1])]
+    if len(names)>=2:fields['buyer'],fields['seller']=names[0][-1],names[1][-1]
     totals=right_value(r'\(?小写\)?',r'[-]?\d[\d,]*\.\d{2}')
-    if totals:fields['total']=totals[0][1].replace(',','')
+    if totals:fields['total']=totals[0][-1].replace(',','')
     if not fields['total']:
         # Uppercase currency and its adjacent small total survive shuffled PDF text.
         matches=re.findall(r'[零壹贰叁肆伍陆柒捌玖拾佰仟万亿圆元角分整正]+\s*[¥￥]\s*(-?\d[\d,]*\.\d{2})',text)
@@ -276,7 +279,7 @@ def receipt_fields(extracted: dict) -> dict:
 def receipt_category(item):
     if re.search(r'住宿|酒店|宾馆|房费',item):return '住宿费'
     if re.search(r'交通|运输|客运|车票|机票|高铁|出租|taxi|transport',item,re.I):return '交通费'
-    if re.search(r'云服务|技术服务|软件|API|订阅',item,re.I):return '软件服务费'
+    if re.search(r'云服务|技术服务|软件|API|订阅|software|cloud|subscription',item,re.I):return '软件服务费'
     if re.search(r'培训|会议|报名',item):return '培训会议费'
     if re.search(r'文具|办公|打印|墨盒',item):return '办公用品'
     if re.search(r'通信|通讯|话费',item):return '通讯费'
