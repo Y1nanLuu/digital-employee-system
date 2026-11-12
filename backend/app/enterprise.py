@@ -20,7 +20,7 @@ def record_revision(task,db):
         db.commit()
 
 def reserve(db,task):
-    inv=task.payload.get('invoice') or {};number=inv.get('invoice_no','') if task.payload['category']!='出差餐补' else ''
+    inv=task.payload.get('invoice') or {};number=inv.get('invoice_no','') if enterprise_rules.requires_invoice(task.payload,policies.for_task(db,task)) else ''
     for row in db.scalars(select(InvoiceClaim).where(InvoiceClaim.task_id==task.id)):
         if row.invoice_key!=invoice_key(number,inv.get('invoice_code','')):db.delete(row)
     db.flush()
@@ -50,20 +50,20 @@ def checks(task,db):
           'invoice_date':inv.get('invoice_date') or '', 'total':inv.get('total',''),
           'owner':task.owner,'amount':task.payload['amount'],'expense_date':task.payload['expense_date']}
     item=db.get(InvoiceFile,str(task.payload.get('file_id')))
-    body['file_sha256']=item.digest if item and task.payload['category']!='出差餐补' else ''
-    if task.payload['category']=='出差餐补':body.update(invoice_no='',invoice_code='')
+    body['file_sha256']=item.digest if item and enterprise_rules.requires_invoice(task.payload,policies.for_task(db,task)) else ''
+    if not enterprise_rules.requires_invoice(task.payload,policy):body.update(invoice_no='',invoice_code='')
     expected={'task_id':task.id,'invoice_no':body['invoice_no'],'simulated':True}
     verified=services.tool(task,'POST','/checks/invoice',body,response_model=InvoiceCheckResponse,expected=expected,stage='invoice_check')
     duplicate=services.tool(task,'POST','/checks/duplicate',body,response_model=DuplicateResponse,expected=expected,stage='duplicate_check')
     if not enough:findings['hard'].append({'code':'GEN-06','message':'项目预算不足'})
-    if task.payload['category']!='出差餐补':
+    if enterprise_rules.requires_invoice(task.payload,policies.for_task(db,task)):
         if verified['status']=='invalid':findings['hard'].append({'code':'INV-04','message':verified['reason']})
         elif verified['status']=='unknown':findings['manual'].append({'code':'INV-04','message':'模拟台账未知，请人工核对票据'})
     local=db.get(InvoiceClaim,invoice_key(body['invoice_no'],body['invoice_code'])) if body['invoice_no'] else None
     same_file=False
-    if item and task.payload['category']!='出差餐补':
+    if item and enterprise_rules.requires_invoice(task.payload,policies.for_task(db,task)):
         ids={x.id for x in db.scalars(select(InvoiceFile).where(InvoiceFile.digest==item.digest))}
-        same_file=any(t.payload.get('file_id') in ids and t.payload.get('category')!='出差餐补'
+        same_file=any(t.payload.get('file_id') in ids and enterprise_rules.requires_invoice(t.payload,policies.for_task(db,t))
                       for t in db.scalars(select(Task).where(Task.id!=task.id,Task.status.notin_(['rejected','cancelled']))))
     if duplicate['duplicate'] or same_file or (local and local.task_id!=task.id):findings['hard'].append({'code':'INV-05','message':'同票或相同原件已报销或被其他申请占用'})
     elif duplicate['suspected']:findings['manual'].append({'code':'INV-06','message':'同员工同日同额存在疑似重复，请核对'})
@@ -110,7 +110,7 @@ def approve(task,request,user,db):
     from . import services
     if request.corrected_fields is not None:raise HTTPException(422,'审批人不能修改字段，请退回员工补充')
     if request.decision=='approve' and not request.reviewed_fields:raise HTTPException(422,'请确认已核对原票、字段、制度和工具结果')
-    if request.decision=='approve' and task.payload['category']!='出差餐补':
+    if request.decision=='approve' and enterprise_rules.requires_invoice(task.payload,policies.for_task(db,task)):
         inv=task.payload.get('invoice') or {}
         if any(not inv.get(k) for k in ['invoice_no','invoice_date','buyer','seller','total','item_name']):
             raise HTTPException(422,'关键票面字段缺失，请退回员工补齐后重新初审')

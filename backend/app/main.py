@@ -142,7 +142,9 @@ def reject_duplicate_upload(db,user,fields,digest,exclude_task=None):
     """Reject before a duplicate becomes an archive or a queue item."""
     number=fields.get('invoice_no','');code=fields.get('invoice_code','')
     for task in db.scalars(select(Task).where(Task.status.notin_(['rejected','cancelled']))):
-        if task.id==exclude_task or task.payload.get('category')=='出差餐补':continue
+        from .enterprise_rules import requires_invoice
+        if task.id==exclude_task:continue
+        if task.payload.get('category')=='出差餐补' and (task.policy_version=='demo-v1' or not requires_invoice(task.payload,policies.for_task(db,task))):continue
         inv=task.payload.get('invoice') or {}
         original=db.get(InvoiceFile,str(task.payload.get('file_id')))
         same_number=bool(number and inv.get('invoice_no')==number and (len(number)==20 or inv.get('invoice_code','')==code))
@@ -296,6 +298,10 @@ def create_task(body: ClaimInput, idempotency_key: str = Header(min_length=8, ma
         timestamp = services.now()
         from .numbers import allocate
         policy=policies.register(db) if enterprise else None
+        if policy:
+            from .enterprise_rules import missing_materials
+            missing=missing_materials(confirmed_payload,policy)
+            if missing:raise HTTPException(422,'超过'+policy['parameters']['invoice_only_limit']+'元，请补齐：'+'、'.join(missing))
         task = Task(id=str(uuid4()), business_no=allocate(db,user['username'],timestamp), owner=user['username'], request_key=idempotency_key,
                     status='queued', payload=confirmed_payload, result={}, citations=[], logs=[], events=[], approvals=[],
                     created_at=timestamp, wait_seconds=0.0, manual=False,
@@ -337,6 +343,9 @@ def resubmit(task_id:str,body:ResubmitInput,idempotency_key:str=Header(min_lengt
         if task.policy_version=='demo-v1':raise HTTPException(409,'历史任务不支持新流程')
         if not body.department.strip():raise HTTPException(422,'请填写部门')
         snapshot=source_snapshot(body,db,user);conflicts=enterprise_conflicts(body,snapshot)
+        from .enterprise_rules import missing_materials
+        missing=missing_materials(body.payload(),policies.for_task(db,task))
+        if missing:raise HTTPException(422,'请补齐本次报销所需材料：'+'、'.join(missing))
         before=task.payload;now=services.now()
         task.revision+=1;task.payload=body.payload();task.parse_snapshot=snapshot
         if task.result.get('returned_at'):

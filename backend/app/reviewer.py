@@ -22,6 +22,8 @@ def review(payload,citations,tools,findings):
                 '仅返回JSON对象，字段conclusion为通过/存疑/拒绝，reasons为非空中文字符串数组，citation_ids为引用条款编号数组。'
                 '必须依据给定资料，不得补造事实或工具结果。硬规则拒绝不能给通过；模拟验真不能表述为真实税务验真。'
                 '缺材料、未知查验或需例外审批须存疑。引用只能来自citations。'
+                '若rule_findings.facts.invoice_only为true，本申请适用GEN-08小额材料豁免，'
+                '发票以外的分类材料、合同编号、行程、人数、收货说明等免填；不要因这些缺项判为存疑。'
                 'reasons用1至3条简短中文说明，每条只表达一个问题，尽量不超过60字。'
                 '先写影响结论的主要原因，再写需要补充的材料。避免重复、字段堆砌、英文内部状态和长串分号。')
         body={'model':provider['model'],'temperature':0,'messages':[{'role':'system','content':prompt},

@@ -12,7 +12,8 @@ config.COMPANY_TITLE='示例科技有限公司'
 passed=0;failures=[]
 for case in cases:
     if case['layer'] not in ['policy_and_llm','hotel_boundary']:continue
-    actual=evaluate(case['input'],policies.current(),case.get('identity_fixture',{}).get('grade','staff'))
+    policy=json.loads((policies.DEFAULT_PATH.parent/'enterprise-policy-v2.json').read_text(encoding='utf-8'))
+    actual=evaluate(case['input'],policy,case.get('identity_fixture',{}).get('grade','staff'))
     hard=sorted(set(x['code'] for x in actual['hard']));manual=sorted(set(x['code'] for x in actual['manual']))
     if hard==case['expected']['hard_codes'] and manual==case['expected']['manual_codes']:passed+=1
     else:failures.append({'id':case['id'],'hard':hard,'manual':manual,'expected':case['expected']})

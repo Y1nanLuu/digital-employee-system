@@ -48,7 +48,7 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       COMPANY_TITLE: ${COMPANY_TITLE:-示例科技有限公司}
       FILE_STORAGE_DIR: /app/data/invoices
-      ACTIVE_POLICY_VERSION: enterprise-demo-v2
+      ACTIVE_POLICY_VERSION: enterprise-demo-v3
     volumes:
       - backend-files:/app/data
       - ./ai-module:/ai-module:ro

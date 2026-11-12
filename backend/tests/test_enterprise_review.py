@@ -16,6 +16,7 @@ from app.enterprise_rules import evaluate
 @pytest.fixture
 def v2(clients,monkeypatch):
     monkeypatch.setattr(config,'ACTIVE_POLICY_VERSION','enterprise-demo-v2')
+    monkeypatch.setenv('ENTERPRISE_POLICY_FILE',str(policies.DEFAULT_PATH.with_name('enterprise-policy-v2.json')))
     monkeypatch.setattr(reviewer,'review',lambda *args:{'conclusion':'通过','reasons':['按已提供材料核对'],
                         'citation_ids':['GEN-03'],'source':'llm','model':'test-double','latency_ms':1})
     return clients
@@ -230,7 +231,8 @@ def test_corrupt_archive_cannot_be_approved(v2):
  ('出差餐补',{'approval_no':'T1','trip_start':'2026-11-01','trip_end':'2026-11-01','supplied_lunches':1},'60.01','MEAL-02'),
  ('住宿费',{'city':'未知城市','check_in':'2026-11-01','check_out':'2026-11-02','approval_no':'T1','proof_reference':'清单'},'200.00','TRV-03'),
 ])
-def test_category_specific_rules(category,details,amount,code):
+def test_category_specific_rules(category,details,amount,code,monkeypatch):
+    monkeypatch.setenv('ENTERPRISE_POLICY_FILE',str(policies.DEFAULT_PATH.with_name('enterprise-policy-v2.json')))
     body=rule_body(category,amount);body['details']=details
     assert any(x['code']==code for x in evaluate(body,policies.current())['manual'])
 

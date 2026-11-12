@@ -78,7 +78,8 @@ def write_result(task, decision, reason, db):
     enterprise = task.policy_version != 'demo-v1'
     if enterprise:
         invoice=task.payload.get('invoice') or {}
-        taxable=task.payload['category']!='出差餐补'
+        from . import enterprise_rules,policies
+        taxable=enterprise_rules.requires_invoice(task.payload,policies.for_task(db,task))
         payload.update(invoice_no=invoice.get('invoice_no','') if taxable else '',invoice_code=invoice.get('invoice_code','') if taxable else '',
                        owner=task.owner,amount=task.payload['amount'],expense_date=task.payload['expense_date'])
         from .models import InvoiceFile

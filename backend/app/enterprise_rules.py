@@ -5,6 +5,26 @@ from zoneinfo import ZoneInfo
 import re
 from . import config
 
+MATERIAL_LABELS = {
+    'approval_no':'审批或合同编号','proof_reference':'明细、收货或业务材料说明',
+    'city':'住宿城市','check_in':'入住日期','check_out':'离店日期',
+    'seat':'交通席位','route':'因公路线','attendees':'参加总人数',
+    'companions':'陪同人数','business_partner':'招待对象或单位',
+    'service_period':'月份或服务期间','trip_start':'出差开始日期','trip_end':'出差结束日期',
+}
+
+def requires_invoice(payload, policy):
+    return payload['category'] != '出差餐补' or 'invoice_only_limit' in policy['parameters']
+
+def missing_materials(payload, policy):
+    p=policy['parameters'];limit=p.get('invoice_only_limit')
+    if limit is None or Decimal(payload['amount'])<=Decimal(limit):return []
+    details=payload.get('details') or {}
+    required=p.get('required_materials',{}).get(payload['category'],[])
+    return [MATERIAL_LABELS[key] for key in required
+            if details.get(key) is None or str(details.get(key,'')).strip()==''
+            or (key=='attendees' and details.get(key,0)<=0)]
+
 def evaluate(payload,policy,grade='staff'):
     p=policy['parameters'];amount=Decimal(payload['amount']);category=payload['category']
     inv=payload.get('invoice') or {};d=payload.get('details') or {}
@@ -17,7 +37,7 @@ def evaluate(payload,policy,grade='staff'):
     if (today-date.fromisoformat(payload['expense_date'])).days>p['expense_days']:flag('GEN-04','费用超30日，须补充逾期说明')
     if not payload.get('department','').strip():flag('GEN-01','请补充归属部门')
     if re.search(r'私人|个人消费|无关业务|非业务',payload.get('description','')):flag('GEN-01','费用业务用途需要核对')
-    if category!='出差餐补':
+    if requires_invoice(payload,policy):
         missing=[name for name in ['invoice_no','invoice_date','buyer','seller','total','item_name'] if not inv.get(name)]
         if missing:flag('INV-01','票面字段待补充：'+','.join(missing))
         number=inv.get('invoice_no','')
@@ -30,6 +50,19 @@ def evaluate(payload,policy,grade='staff'):
             if total<=0:flag('INV-04','票面为零或负额，须走冲销核对',True)
             if amount>total:flag('INV-07','申报金额超过票面含税总额',True)
             elif amount<total:flag('INV-07','部分报销须核对差异说明，一票仍只能报销一次')
+    invoice_limit=p.get('invoice_only_limit')
+    if invoice_limit is not None:
+        simple=amount<=Decimal(invoice_limit)
+        facts.update(invoice_only=simple,invoice_only_limit=invoice_limit)
+        missing=missing_materials(payload,policy)
+        if missing:flag('GEN-08','请补充：'+'、'.join(missing))
+        if simple:
+            # Keep category approval and known monetary limits without requesting extra materials.
+            if category in ['业务招待费','通讯费','培训会议费','软件服务费','出差餐补']:
+                flag('GEN-08','本笔仅需发票，仍按费用类别由人工审批')
+            if category=='通讯费' and amount>Decimal(p['phone_limit']):flag('TEL-01','通讯申报超过单次标准')
+            if category=='其他':flag('OTH-01','其他类别须人工确认适用依据')
+            return {'hard':hard,'manual':manual,'facts':facts}
     if category=='交通费':
         if d.get('seat') not in ['二等座','硬座','硬卧','经济舱','市内交通']:flag('TRV-01','请核对交通席位标准')
         if not d.get('route'):flag('TRV-02','请补充因公路线或行程说明')
@@ -54,7 +87,7 @@ def evaluate(payload,policy,grade='staff'):
         if amount>Decimal(p['entertainment_event']) or (count>0 and amount>Decimal(p['entertainment_person'])*count):flag('ENT-02','招待超过人均或单次标准，须说明')
     elif category=='办公用品':
         if not d.get('proof_reference'):flag('OFF-01','请补充办公用品明细或收货说明')
-        if amount>Decimal(p['auto_limit']) and not d.get('approval_no'):flag('OFF-01','大额办公采购缺少审批编号')
+        if amount>Decimal(p.get('invoice_only_limit',p['auto_limit'])) and not d.get('approval_no'):flag('OFF-01','办公采购缺少审批编号')
     elif category=='通讯费':
         flag('TEL-01','通讯费用按月份人工核对')
         if not d.get('service_period'):flag('TEL-01','请补充通讯月份')

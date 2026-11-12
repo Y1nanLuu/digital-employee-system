@@ -14,6 +14,12 @@ def current():
     p=policy['parameters']
     if not policy['version'] or not 0<Decimal(p['auto_limit'])<=Decimal(p['claim_limit'])<=5000:
         raise ValueError('制度阈值无效')
+    if 'invoice_only_limit' in p:
+        from .enterprise_rules import MATERIAL_LABELS
+        if not 0<Decimal(p['invoice_only_limit'])<=Decimal(p['claim_limit']):raise ValueError('小额材料门槛无效')
+        required=p.get('required_materials',{})
+        if set(required)!=set(policy['categories']) or any(not keys or any(k not in MATERIAL_LABELS for k in keys) for keys in required.values()):
+            raise ValueError('请完整配置各费用类别的材料字段')
     for rule in policy['rules']:
         if rule['id']=='GEN-03':rule['text']=f"无风险且申报不超{p['auto_limit']}元、有效模型意见为通过时可自动初审；超阈值交人工。"
         if rule['id']=='GEN-02':rule['text']=f"申报金额大于0且不超过{p['claim_limit']}元，最多两位小数，票面总额独立保存。"
